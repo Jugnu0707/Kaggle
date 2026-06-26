@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { EmptyState } from "./ui";
 
 export interface Column<T> {
   key: string;
@@ -13,6 +12,7 @@ interface DataTableProps<T> {
   data: T[];
   onRowClick?: (row: T) => void;
   emptyMessage?: string;
+  emptyVariant?: "table" | "card";
 }
 
 export function DataTable<T>({
@@ -20,11 +20,12 @@ export function DataTable<T>({
   data,
   onRowClick,
   emptyMessage = "No records found.",
+  emptyVariant = "table",
 }: DataTableProps<T>) {
-  if (data.length === 0) {
+  if (data.length === 0 && emptyVariant === "card") {
     return (
-      <div className="p-4">
-        <EmptyState title="No records" description={emptyMessage} />
+      <div className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+        {emptyMessage}
       </div>
     );
   }
@@ -45,22 +46,33 @@ export function DataTable<T>({
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-200 bg-white dark:divide-slate-800 dark:bg-slate-950">
-          {data.map((row, index) => (
-            <tr
-              key={index}
-              onClick={() => onRowClick?.(row)}
-              className={onRowClick ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900" : ""}
-            >
-              {columns.map((column) => (
-                <td
-                  key={column.key}
-                  className={`whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300 ${column.className ?? ""}`}
-                >
-                  {column.render(row)}
-                </td>
-              ))}
+          {data.length === 0 ? (
+            <tr>
+              <td
+                colSpan={columns.length}
+                className="px-4 py-10 text-center text-sm text-slate-500 dark:text-slate-400"
+              >
+                {emptyMessage}
+              </td>
             </tr>
-          ))}
+          ) : (
+            data.map((row, index) => (
+              <tr
+                key={index}
+                onClick={() => onRowClick?.(row)}
+                className={onRowClick ? "cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-900" : ""}
+              >
+                {columns.map((column) => (
+                  <td
+                    key={column.key}
+                    className={`whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300 ${column.className ?? ""}`}
+                  >
+                    {column.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>

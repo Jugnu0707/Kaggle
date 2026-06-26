@@ -9,10 +9,14 @@ export type IncidentStatus = "New" | "Investigating" | "Resolved" | "Closed";
 export type UploadStatus = "Completed" | "Deleted" | "Failed";
 
 export interface HealthData {
+  status: string;
   application_name: string;
   version: string;
   uptime_seconds: number;
   database_connected: boolean;
+  adk?: boolean;
+  coordinator?: boolean;
+  mcp?: boolean;
   timestamp: string;
 }
 

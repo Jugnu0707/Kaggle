@@ -1,6 +1,9 @@
 import axios, { type AxiosError } from "axios";
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const configuredApiUrl = import.meta.env.VITE_API_URL?.trim();
+
+export const API_BASE_URL =
+  import.meta.env.DEV && !configuredApiUrl ? "" : (configuredApiUrl ?? "http://localhost:8000");
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -39,14 +42,38 @@ apiClient.interceptors.response.use(
   },
 );
 
+interface ApiErrorBody {
+  message?: string;
+  success?: boolean;
+}
+
+export function isBackendUnavailableError(error: unknown): boolean {
+  if (axios.isAxiosError(error)) {
+    const axiosError = error as AxiosError<ApiErrorBody>;
+    if (!axiosError.response) {
+      return true;
+    }
+    return axiosError.response.status >= 500;
+  }
+
+  if (error instanceof Error) {
+    return /backend unavailable|network error|failed to fetch/i.test(error.message);
+  }
+
+  return false;
+}
+
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError(error)) {
-    const axiosError = error as AxiosError<{ message?: string }>;
+    const axiosError = error as AxiosError<ApiErrorBody>;
     if (axiosError.response?.data?.message) {
       return axiosError.response.data.message;
     }
-    if (axiosError.message === "Network Error") {
+    if (!axiosError.response || axiosError.message === "Network Error") {
       return "Backend unavailable. Please check that the API server is running.";
+    }
+    if (axiosError.response.status === 404) {
+      return "The requested resource was not found.";
     }
     return axiosError.message;
   }

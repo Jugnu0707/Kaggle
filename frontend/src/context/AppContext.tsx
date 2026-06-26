@@ -43,6 +43,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setBackendStatus("loading");
     try {
       const data = await fetchHealth();
+      if (!data.database_connected || data.status !== "healthy") {
+        setHealth(data);
+        setBackendStatus("unavailable");
+        return;
+      }
       setHealth(data);
       setBackendStatus("healthy");
     } catch {

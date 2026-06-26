@@ -1,34 +1,41 @@
 import { useCallback, useEffect, useState } from "react";
 import { DataTable } from "../components/DataTable";
 import { FileUpload } from "../components/FileUpload";
-import { Badge, ErrorState, LoadingSpinner } from "../components/ui";
+import { Badge, LoadingSpinner } from "../components/ui";
 import { useAppContext } from "../context/AppContext";
-import { getErrorMessage } from "../services/apiClient";
 import { listLogFiles, uploadLogFile } from "../services/logService";
 import type { LogFileMetadata } from "../types/api";
 import { formatDate, formatFileSize } from "../utils/format";
+
+const EMPTY_LOGS_MESSAGE = "No log files uploaded yet. Upload a log file to get started.";
 
 export function LogUploadPage() {
   const { backendStatus } = useAppContext();
   const [logs, setLogs] = useState<LogFileMetadata[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
   const loadLogs = useCallback(async () => {
+    if (backendStatus !== "healthy") {
+      setLogs([]);
+      setTotalPages(1);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
-    setError(null);
     try {
       const data = await listLogFiles(page, 10);
       setLogs(data.items);
       setTotalPages(data.total_pages || 1);
-    } catch (loadError) {
-      setError(getErrorMessage(loadError));
+    } catch {
+      setLogs([]);
+      setTotalPages(1);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [backendStatus, page]);
 
   useEffect(() => {
     void loadLogs();
@@ -53,7 +60,7 @@ export function LogUploadPage() {
         <div className="mt-4">
           <FileUpload
             onUpload={handleUpload}
-            disabled={backendStatus === "unavailable"}
+            disabled={backendStatus !== "healthy"}
           />
         </div>
       </section>
@@ -63,17 +70,13 @@ export function LogUploadPage() {
           <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Uploaded Logs</h3>
         </div>
 
-        {loading ? (
+        {loading && backendStatus === "healthy" ? (
           <LoadingSpinner label="Loading uploaded logs..." />
-        ) : error ? (
-          <div className="p-4">
-            <ErrorState message={error} onRetry={() => void loadLogs()} />
-          </div>
         ) : (
           <>
             <DataTable
               data={logs}
-              emptyMessage="No log files uploaded yet."
+              emptyMessage={EMPTY_LOGS_MESSAGE}
               columns={[
                 {
                   key: "filename",
@@ -100,7 +103,7 @@ export function LogUploadPage() {
             <div className="flex items-center justify-between border-t border-slate-200 px-4 py-3 dark:border-slate-800">
               <button
                 type="button"
-                disabled={page <= 1}
+                disabled={page <= 1 || backendStatus !== "healthy"}
                 onClick={() => setPage((current) => current - 1)}
                 className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50 dark:border-slate-700"
               >
@@ -111,7 +114,7 @@ export function LogUploadPage() {
               </span>
               <button
                 type="button"
-                disabled={page >= totalPages}
+                disabled={page >= totalPages || backendStatus !== "healthy"}
                 onClick={() => setPage((current) => current + 1)}
                 className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-50 dark:border-slate-700"
               >

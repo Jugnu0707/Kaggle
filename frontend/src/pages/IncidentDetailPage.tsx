@@ -1,50 +1,91 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Badge, ErrorState, LoadingSpinner } from "../components/ui";
+import { Badge, EmptyState, LoadingSpinner } from "../components/ui";
+import { useAppContext } from "../context/AppContext";
+import { isBackendUnavailableError } from "../services/apiClient";
 import { getIncident } from "../services/incidentService";
-import { getErrorMessage } from "../services/apiClient";
 import type { IncidentDetail } from "../types/api";
 import { formatDate } from "../utils/format";
 
 export function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const { backendStatus } = useAppContext();
   const [incident, setIncident] = useState<IncidentDetail | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [notFound, setNotFound] = useState(false);
+  const [backendUnavailable, setBackendUnavailable] = useState(false);
 
   useEffect(() => {
     if (!id) {
-      setError("Invalid incident ID");
+      setNotFound(true);
+      setLoading(false);
+      return;
+    }
+
+    if (backendStatus !== "healthy") {
+      setIncident(null);
+      setBackendUnavailable(true);
       setLoading(false);
       return;
     }
 
     const loadIncident = async () => {
       setLoading(true);
-      setError(null);
+      setNotFound(false);
+      setBackendUnavailable(false);
       try {
         setIncident(await getIncident(id));
       } catch (loadError) {
-        setError(getErrorMessage(loadError));
+        setIncident(null);
+        if (isBackendUnavailableError(loadError)) {
+          setBackendUnavailable(true);
+        } else {
+          setNotFound(true);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     void loadIncident();
-  }, [id]);
+  }, [backendStatus, id]);
 
   if (loading) {
     return <LoadingSpinner label="Loading incident details..." />;
   }
 
-  if (error || !incident) {
+  if (backendUnavailable) {
     return (
       <div className="space-y-4">
         <Link to="/incidents" className="text-sm text-indigo-600 hover:underline dark:text-indigo-400">
           Back to incidents
         </Link>
-        <ErrorState title="Incident unavailable" message={error ?? "Incident not found"} />
+        <EmptyState
+          title="Incident details unavailable"
+          description="The backend is currently unavailable. Return to the incidents list and try again later."
+        />
+      </div>
+    );
+  }
+
+  if (notFound || !incident) {
+    return (
+      <div className="space-y-4">
+        <Link to="/incidents" className="text-sm text-indigo-600 hover:underline dark:text-indigo-400">
+          Back to incidents
+        </Link>
+        <EmptyState
+          title="Incident not found"
+          description="This incident does not exist or may have been removed."
+          action={
+            <Link
+              to="/incidents"
+              className="inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              Back to incidents
+            </Link>
+          }
+        />
       </div>
     );
   }

@@ -18,10 +18,20 @@ export interface ListIncidentsParams {
 
 export async function fetchHealth(): Promise<HealthData> {
   const response = await apiClient.get<APIResponse<HealthData>>("/api/v1/health");
-  if (!response.data.success || !response.data.data) {
-    throw new Error(response.data.message || "Health check failed");
+  const body = response.data;
+
+  if (
+    body &&
+    typeof body === "object" &&
+    "success" in body &&
+    "data" in body &&
+    body.success &&
+    body.data
+  ) {
+    return body.data;
   }
-  return response.data.data;
+
+  throw new Error("Health check failed: unexpected response from backend");
 }
 
 export async function listIncidents(params: ListIncidentsParams = {}): Promise<IncidentList> {
