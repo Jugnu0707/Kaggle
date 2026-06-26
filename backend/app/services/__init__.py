@@ -1,1 +1,5 @@
-"""Business logic and orchestration services."""
+"""Business logic services."""
+
+from app.services.incident_service import IncidentService
+
+__all__ = ["IncidentService"]

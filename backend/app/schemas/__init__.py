@@ -3,7 +3,13 @@
 from app.schemas.audit_log import AuditLogCreate, AuditLogResponse, AuditLogUpdate
 from app.schemas.enums import IncidentStatus, InvestigationStatus, Severity
 from app.schemas.evidence import EvidenceCreate, EvidenceResponse, EvidenceUpdate
-from app.schemas.incident import IncidentCreate, IncidentResponse, IncidentUpdate
+from app.schemas.incident import (
+    IncidentCreate,
+    IncidentDetailResponse,
+    IncidentListResponse,
+    IncidentResponse,
+    IncidentUpdate,
+)
 from app.schemas.investigation import (
     InvestigationCreate,
     InvestigationResponse,
@@ -20,6 +26,8 @@ __all__ = [
     "EvidenceResponse",
     "EvidenceUpdate",
     "IncidentCreate",
+    "IncidentDetailResponse",
+    "IncidentListResponse",
     "IncidentResponse",
     "IncidentStatus",
     "IncidentUpdate",
