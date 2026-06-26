@@ -3,6 +3,7 @@
 from app.models.agent_execution import AgentExecution
 from app.models.audit_log import AuditLog
 from app.models.enums import AgentExecutionStatus, IncidentStatus, InvestigationStatus, Severity, UploadStatus
+from app.models.executive_report import ExecutiveReport
 from app.models.evidence import Evidence
 from app.models.incident import Incident
 from app.models.investigation import Investigation
@@ -17,6 +18,7 @@ __all__ = [
     "AgentExecutionStatus",
     "AuditLog",
     "Evidence",
+    "ExecutiveReport",
     "Incident",
     "IncidentStatus",
     "Investigation",

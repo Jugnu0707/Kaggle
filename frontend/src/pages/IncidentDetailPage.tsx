@@ -3,12 +3,14 @@ import { Link, useParams } from "react-router-dom";
 import { Badge, ConfidenceBadge, EmptyState, LoadingSpinner, ReputationBadge, SourceBadge } from "../components/ui";
 import { useAppContext } from "../context/AppContext";
 import { isBackendUnavailableError } from "../services/apiClient";
+import { getIncidentExecutiveReport } from "../services/executiveReportService";
 import { getIncident } from "../services/incidentService";
 import { getIncidentMitreMappings } from "../services/mitreService";
 import { getIncidentResponsePlan } from "../services/responseService";
 import { getIncidentRiskAssessment } from "../services/riskService";
 import { getIncidentThreatIntelligence } from "../services/threatIntelligenceService";
 import type {
+  ExecutiveReportRecord,
   IncidentDetail,
   MitreFinding,
   ResponsePlanRecord,
@@ -17,7 +19,13 @@ import type {
 } from "../types/api";
 import { formatDate } from "../utils/format";
 
-type IncidentTab = "overview" | "threat-intelligence" | "mitre" | "risk" | "response";
+type IncidentTab =
+  | "overview"
+  | "threat-intelligence"
+  | "mitre"
+  | "risk"
+  | "response"
+  | "executive-report";
 
 export function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -27,12 +35,14 @@ export function IncidentDetailPage() {
   const [threatFindings, setThreatFindings] = useState<ThreatIntelligenceFindingRecord[]>([]);
   const [riskAssessment, setRiskAssessment] = useState<RiskAssessmentRecord | null>(null);
   const [responsePlan, setResponsePlan] = useState<ResponsePlanRecord | null>(null);
+  const [executiveReport, setExecutiveReport] = useState<ExecutiveReportRecord | null>(null);
   const [activeTab, setActiveTab] = useState<IncidentTab>("overview");
   const [loading, setLoading] = useState(true);
   const [mitreLoading, setMitreLoading] = useState(false);
   const [threatLoading, setThreatLoading] = useState(false);
   const [riskLoading, setRiskLoading] = useState(false);
   const [responseLoading, setResponseLoading] = useState(false);
+  const [executiveLoading, setExecutiveLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [backendUnavailable, setBackendUnavailable] = useState(false);
   const [mitreError, setMitreError] = useState<string | null>(null);
@@ -42,6 +52,8 @@ export function IncidentDetailPage() {
   const [riskNotFound, setRiskNotFound] = useState(false);
   const [responseError, setResponseError] = useState<string | null>(null);
   const [responseNotFound, setResponseNotFound] = useState(false);
+  const [executiveError, setExecutiveError] = useState<string | null>(null);
+  const [executiveNotFound, setExecutiveNotFound] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -192,6 +204,34 @@ export function IncidentDetailPage() {
     void loadResponse();
   }, [activeTab, backendStatus, id]);
 
+  useEffect(() => {
+    if (!id || backendStatus !== "healthy" || activeTab !== "executive-report") {
+      return;
+    }
+
+    const loadExecutiveReport = async () => {
+      setExecutiveLoading(true);
+      setExecutiveError(null);
+      setExecutiveNotFound(false);
+      try {
+        setExecutiveReport(await getIncidentExecutiveReport(id));
+      } catch (loadError) {
+        setExecutiveReport(null);
+        if (isBackendUnavailableError(loadError)) {
+          setExecutiveError("Executive report is unavailable while the backend is offline.");
+        } else if (loadError instanceof Error && loadError.message.includes("not found")) {
+          setExecutiveNotFound(true);
+        } else {
+          setExecutiveError("Failed to load executive report.");
+        }
+      } finally {
+        setExecutiveLoading(false);
+      }
+    };
+
+    void loadExecutiveReport();
+  }, [activeTab, backendStatus, id]);
+
   if (loading) {
     return <LoadingSpinner label="Loading incident details..." />;
   }
@@ -278,6 +318,11 @@ export function IncidentDetailPage() {
             active={activeTab === "response"}
             onClick={() => setActiveTab("response")}
           />
+          <TabButton
+            label="Executive Report"
+            active={activeTab === "executive-report"}
+            onClick={() => setActiveTab("executive-report")}
+          />
         </nav>
       </div>
 
@@ -303,12 +348,19 @@ export function IncidentDetailPage() {
           error={riskError}
           notFound={riskNotFound}
         />
-      ) : (
+      ) : activeTab === "response" ? (
         <ResponseTab
           plan={responsePlan}
           loading={responseLoading}
           error={responseError}
           notFound={responseNotFound}
+        />
+      ) : (
+        <ExecutiveReportTab
+          report={executiveReport}
+          loading={executiveLoading}
+          error={executiveError}
+          notFound={executiveNotFound}
         />
       )}
     </div>
@@ -662,6 +714,132 @@ function ResponseTab({
           {plan.executive_summary}
         </p>
       </div>
+    </section>
+  );
+}
+
+function ExecutiveReportTab({
+  report,
+  loading,
+  error,
+  notFound,
+}: {
+  report: ExecutiveReportRecord | null;
+  loading: boolean;
+  error: string | null;
+  notFound: boolean;
+}) {
+  const [copyStatus, setCopyStatus] = useState<string | null>(null);
+
+  if (loading) {
+    return <LoadingSpinner label="Loading executive report..." />;
+  }
+
+  if (error) {
+    return <EmptyState title="Executive report unavailable" description={error} />;
+  }
+
+  if (notFound || !report) {
+    return (
+      <EmptyState
+        title="No executive report found"
+        description="Run the Executive Report Agent on this incident to generate a leadership-ready report."
+      />
+    );
+  }
+
+  const handleCopyMarkdown = async () => {
+    try {
+      await navigator.clipboard.writeText(report.markdown_report);
+      setCopyStatus("Copied to clipboard");
+      window.setTimeout(() => setCopyStatus(null), 2000);
+    } catch {
+      setCopyStatus("Unable to copy markdown");
+    }
+  };
+
+  const handleDownloadMarkdown = () => {
+    const blob = new Blob([report.markdown_report], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `executive-report-${report.incident_id}.md`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <section className="space-y-6">
+      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-100">
+        This report omits sensitive technical details.
+      </div>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">
+              {report.title}
+            </h3>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Generated {formatDate(report.created_at)}
+            </p>
+          </div>
+          <SourceBadge source={report.source} />
+        </div>
+
+        <div className="mt-6 space-y-6">
+          <div>
+            <h4 className="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Summary
+            </h4>
+            <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">
+              {report.executive_summary}
+            </p>
+          </div>
+
+          <div>
+            <h4 className="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              Business Impact
+            </h4>
+            <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">
+              {report.business_impact}
+            </p>
+          </div>
+
+          <ActionList title="Findings" actions={report.key_findings} />
+          <ActionList title="Recommendations" actions={report.recommended_actions} />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">
+            Markdown Preview
+          </h3>
+          <div className="flex flex-wrap items-center gap-2">
+            {copyStatus && (
+              <span className="text-xs text-emerald-600 dark:text-emerald-400">{copyStatus}</span>
+            )}
+            <button
+              type="button"
+              onClick={() => void handleCopyMarkdown()}
+              className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+            >
+              Copy Markdown
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadMarkdown}
+              className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700"
+            >
+              Download Markdown
+            </button>
+          </div>
+        </div>
+        <pre className="mt-4 max-h-[32rem] overflow-auto rounded-lg bg-slate-950 p-4 text-xs leading-6 text-slate-100">
+          {report.markdown_report}
+        </pre>
+      </section>
     </section>
   );
 }

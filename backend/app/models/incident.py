@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from app.models.log_file import LogFile
     from app.models.mitre_finding import MitreFinding
     from app.models.risk_assessment import RiskAssessment
+    from app.models.executive_report import ExecutiveReport
     from app.models.response_plan import ResponsePlan
     from app.models.threat_intelligence_finding import ThreatIntelligenceFinding
 
@@ -83,6 +84,10 @@ class Incident(Base):
         cascade="all, delete-orphan",
     )
     response_plans: Mapped[list[ResponsePlan]] = relationship(
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+    executive_reports: Mapped[list[ExecutiveReport]] = relationship(
         back_populates="incident",
         cascade="all, delete-orphan",
     )

@@ -4,6 +4,10 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
+from app.schemas.executive_report_agent import (
+    ExecutiveReportRequest,
+    ExecutiveReportResponse,
+)
 from app.schemas.evidence_agent import EvidenceCollectRequest, EvidenceCollectResponse
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
 from app.schemas.response import APIResponse
@@ -15,6 +19,7 @@ from app.schemas.threat_intelligence_agent import (
 )
 from app.schemas.mitre_agent import MitreMappingRequest, MitreMappingResponse
 from app.services.evidence_agent_service import EvidenceAgentService
+from app.services.executive_report_agent_service import ExecutiveReportAgentService
 from app.services.mitre_agent_service import MitreAgentService
 from app.services.orchestration_service import OrchestrationService
 from app.services.response_agent_service import ResponseAgentService
@@ -322,6 +327,69 @@ def plan_response(
     )
 
 
+def get_executive_report_agent_service(
+    db: Session = Depends(get_db),
+) -> ExecutiveReportAgentService:
+    """Provide an Executive Report Agent service bound to the request database session."""
+    return ExecutiveReportAgentService(db)
+
+
+@router.post(
+    "/executive-report",
+    response_model=APIResponse[ExecutiveReportResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Generate executive incident report",
+    description=(
+        "Produce an executive-friendly incident report from incident, evidence, "
+        "MITRE, threat intelligence, risk assessment, and response plan inputs. "
+        "Uses Gemini when available and automatically falls back to deterministic "
+        "templates when AI is unavailable. Returns structured JSON and Markdown."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Executive report generated",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Executive report generated",
+                        "data": {
+                            "source": "FALLBACK",
+                            "title": "Executive Incident Report",
+                            "executive_summary": "A high-severity incident requires leadership review.",
+                            "business_impact": "Significant operational disruption is possible.",
+                            "key_findings": [
+                                "Suspicious activity detected on a critical endpoint"
+                            ],
+                            "recommended_actions": [
+                                "Convene the incident response team for executive briefing"
+                            ],
+                            "lessons_learned": [
+                                "Maintain regular executive briefings during active response"
+                            ],
+                            "markdown": "# Executive Incident Report\n\n## Executive Summary\n...",
+                        },
+                    }
+                }
+            },
+        },
+        status.HTTP_404_NOT_FOUND: {"description": "Incident not found"},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Validation error"},
+    },
+)
+def generate_executive_report(
+    payload: ExecutiveReportRequest,
+    service: ExecutiveReportAgentService = Depends(get_executive_report_agent_service),
+) -> APIResponse[ExecutiveReportResponse]:
+    """Generate an executive incident report."""
+    result = service.generate(payload)
+    return APIResponse(
+        success=True,
+        message="Executive report generated",
+        data=result,
+    )
+
+
 @router.post(
     "/orchestrate",
     response_model=APIResponse[OrchestrateResponse],
@@ -332,8 +400,8 @@ def plan_response(
         "the Evidence Agent when a log file is present, invoke the MITRE Mapping "
         "Agent on the resulting evidence package, invoke the Threat Intelligence "
         "Agent on the same evidence package, invoke the Risk Assessment Agent, "
-        "invoke the Response Planning Agent, and return a structured orchestration "
-        "plan. Remaining specialist agents are placeholders."
+        "invoke the Response Planning Agent, invoke the Executive Report Agent, "
+        "and return a structured orchestration plan. Guardian remains a placeholder."
     ),
     responses={
         status.HTTP_200_OK: {

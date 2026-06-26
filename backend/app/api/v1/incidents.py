@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.models.enums import IncidentStatus, Severity
+from app.schemas.executive_report_agent import ExecutiveReportRecordResponse
 from app.schemas.incident import (
     IncidentCreate,
     IncidentDetailResponse,
@@ -19,6 +20,7 @@ from app.schemas.response_agent import ResponsePlanRecordResponse
 from app.schemas.risk_agent import RiskAssessmentRecordResponse
 from app.schemas.threat_intelligence_agent import ThreatIntelligenceFindingListResponse
 from app.schemas.response import APIResponse
+from app.services.executive_report_agent_service import ExecutiveReportAgentService
 from app.services.incident_service import IncidentService
 from app.services.mitre_agent_service import MitreAgentService
 from app.services.response_agent_service import ResponseAgentService
@@ -53,6 +55,13 @@ def get_threat_intelligence_agent_service(
 ) -> ThreatIntelligenceAgentService:
     """Provide a Threat Intelligence Agent service bound to the request database session."""
     return ThreatIntelligenceAgentService(db)
+
+
+def get_executive_report_agent_service(
+    db: Session = Depends(get_db),
+) -> ExecutiveReportAgentService:
+    """Provide an Executive Report Agent service bound to the request database session."""
+    return ExecutiveReportAgentService(db)
 
 
 @router.post(
@@ -235,6 +244,30 @@ def get_incident_response_plan(
         success=True,
         message="Response plan retrieved successfully",
         data=plan,
+    )
+
+
+@router.get(
+    "/{incident_id}/executive-report",
+    response_model=APIResponse[ExecutiveReportRecordResponse],
+    summary="Get executive report",
+    description="Return the latest persisted executive report for an incident.",
+    responses={
+        200: {"description": "Executive report retrieved successfully"},
+        404: {"description": "Incident or executive report not found"},
+        422: {"description": "Invalid incident ID format"},
+    },
+)
+def get_incident_executive_report(
+    incident_id: uuid.UUID,
+    service: ExecutiveReportAgentService = Depends(get_executive_report_agent_service),
+) -> APIResponse[ExecutiveReportRecordResponse]:
+    """Return the latest executive report for an incident."""
+    report = service.get_latest_report(incident_id)
+    return APIResponse(
+        success=True,
+        message="Executive report retrieved successfully",
+        data=report,
     )
 
 

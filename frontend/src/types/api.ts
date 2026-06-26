@@ -136,6 +136,20 @@ export interface ResponsePlanRecord {
   created_at: string;
 }
 
+export interface ExecutiveReportRecord {
+  id: string;
+  incident_id: string;
+  source: "AI" | "FALLBACK";
+  title: string;
+  executive_summary: string;
+  business_impact: string;
+  key_findings: string[];
+  recommended_actions: string[];
+  lessons_learned: string[];
+  markdown_report: string;
+  created_at: string;
+}
+
 export type ThreatReputation =
   | "Malicious"
   | "Suspicious"

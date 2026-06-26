@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 
 from agents.coordinator.models import OrchestrationPlan
+from agents.executive_report.models import ExecutiveReportResult
 from agents.evidence.models import EvidenceResult
 from agents.mitre.models import MitreMappingResult
 from agents.risk.models import RiskAssessmentResult
@@ -64,6 +65,10 @@ class OrchestrateResponse(OrchestrationPlan):
     response_result: ResponsePlanResult | None = Field(
         default=None,
         description="Response Planning Agent output when upstream agents are orchestrated",
+    )
+    executive_report_result: ExecutiveReportResult | None = Field(
+        default=None,
+        description="Executive Report Agent output when upstream agents are orchestrated",
     )
 
     model_config = ConfigDict(
