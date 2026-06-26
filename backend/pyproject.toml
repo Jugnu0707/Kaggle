@@ -28,7 +28,7 @@ requires = ["setuptools>=75.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["app", "agents", "agents.coordinator", "agents.evidence", "agents.mitre", "agents.risk", "agents.threat_intelligence", "mcp", "mcp.tools"]
+packages = ["app", "agents", "agents.coordinator", "agents.evidence", "agents.mitre", "agents.response", "agents.risk", "agents.threat_intelligence", "mcp", "mcp.tools"]
 
 [tool.setuptools.package-dir]
 "agents" = "../agents"
@@ -37,7 +37,7 @@ packages = ["app", "agents", "agents.coordinator", "agents.evidence", "agents.mi
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["../tests", "../agents/coordinator/tests", "../agents/evidence/tests", "../agents/mitre/tests", "../agents/risk/tests", "../agents/threat_intelligence/tests"]
+testpaths = ["../tests", "../agents/coordinator/tests", "../agents/evidence/tests", "../agents/mitre/tests", "../agents/response/tests", "../agents/risk/tests", "../agents/threat_intelligence/tests"]
 
 [tool.black]
 line-length = 100

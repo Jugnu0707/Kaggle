@@ -15,10 +15,12 @@ from app.schemas.incident import (
     IncidentUpdate,
 )
 from app.schemas.mitre_agent import MitreFindingListResponse
+from app.schemas.response_agent import ResponsePlanRecordResponse
 from app.schemas.risk_agent import RiskAssessmentRecordResponse
 from app.schemas.response import APIResponse
 from app.services.incident_service import IncidentService
 from app.services.mitre_agent_service import MitreAgentService
+from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
@@ -37,6 +39,11 @@ def get_mitre_agent_service(db: Session = Depends(get_db)) -> MitreAgentService:
 def get_risk_agent_service(db: Session = Depends(get_db)) -> RiskAgentService:
     """Provide a Risk Assessment Agent service bound to the request database session."""
     return RiskAgentService(db)
+
+
+def get_response_agent_service(db: Session = Depends(get_db)) -> ResponseAgentService:
+    """Provide a Response Planning Agent service bound to the request database session."""
+    return ResponseAgentService(db)
 
 
 @router.post(
@@ -171,6 +178,30 @@ def get_incident_risk_assessment(
         success=True,
         message="Risk assessment retrieved successfully",
         data=assessment,
+    )
+
+
+@router.get(
+    "/{incident_id}/response",
+    response_model=APIResponse[ResponsePlanRecordResponse],
+    summary="Get response plan",
+    description="Return the latest persisted response plan for an incident.",
+    responses={
+        200: {"description": "Response plan retrieved successfully"},
+        404: {"description": "Incident or response plan not found"},
+        422: {"description": "Invalid incident ID format"},
+    },
+)
+def get_incident_response_plan(
+    incident_id: uuid.UUID,
+    service: ResponseAgentService = Depends(get_response_agent_service),
+) -> APIResponse[ResponsePlanRecordResponse]:
+    """Return the latest response plan for an incident."""
+    plan = service.get_latest_plan(incident_id)
+    return APIResponse(
+        success=True,
+        message="Response plan retrieved successfully",
+        data=plan,
     )
 
 

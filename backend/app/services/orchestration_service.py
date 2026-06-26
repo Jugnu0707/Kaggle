@@ -16,8 +16,10 @@ from app.repositories.agent_execution_repository import AgentExecutionRepository
 from app.schemas.evidence_agent import EvidenceCollectRequest
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
 from app.schemas.risk_agent import RiskAssessmentRequest
+from app.schemas.response_agent import ResponsePlanRequest
 from app.services.evidence_agent_service import EvidenceAgentService
 from app.services.mitre_agent_service import MitreAgentService
+from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
 from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
 
@@ -49,6 +51,7 @@ class OrchestrationService:
         mitre_result = None
         threat_intelligence_result = None
         risk_result = None
+        response_result = None
         if plan.incident_id is not None and plan.log_id is not None:
             evidence_result = EvidenceAgentService(self.db).collect(
                 EvidenceCollectRequest(
@@ -69,6 +72,10 @@ class OrchestrationService:
             )
             risk_result = RiskAgentService(self.db).assess(
                 RiskAssessmentRequest(incident_id=plan.incident_id),
+                workflow_id=plan.workflow_id,
+            )
+            response_result = ResponseAgentService(self.db).plan(
+                ResponsePlanRequest(incident_id=plan.incident_id),
                 workflow_id=plan.workflow_id,
             )
 
@@ -122,6 +129,11 @@ class OrchestrationService:
                 "risk_result": (
                     risk_result.model_dump()
                     if risk_result is not None
+                    else None
+                ),
+                "response_result": (
+                    response_result.model_dump()
+                    if response_result is not None
                     else None
                 ),
             }

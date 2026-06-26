@@ -122,3 +122,16 @@ export interface RiskAssessmentRecord {
   reasoning: string;
   created_at: string;
 }
+
+export interface ResponsePlanRecord {
+  id: string;
+  incident_id: string;
+  source: "AI" | "FALLBACK";
+  priority: string;
+  containment: string[];
+  eradication: string[];
+  recovery: string[];
+  monitoring: string[];
+  executive_summary: string;
+  created_at: string;
+}

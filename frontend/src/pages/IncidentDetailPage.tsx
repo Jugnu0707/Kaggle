@@ -5,11 +5,12 @@ import { useAppContext } from "../context/AppContext";
 import { isBackendUnavailableError } from "../services/apiClient";
 import { getIncident } from "../services/incidentService";
 import { getIncidentMitreMappings } from "../services/mitreService";
+import { getIncidentResponsePlan } from "../services/responseService";
 import { getIncidentRiskAssessment } from "../services/riskService";
-import type { IncidentDetail, MitreFinding, RiskAssessmentRecord } from "../types/api";
+import type { IncidentDetail, MitreFinding, ResponsePlanRecord, RiskAssessmentRecord } from "../types/api";
 import { formatDate } from "../utils/format";
 
-type IncidentTab = "overview" | "mitre" | "risk";
+type IncidentTab = "overview" | "mitre" | "risk" | "response";
 
 export function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,15 +18,19 @@ export function IncidentDetailPage() {
   const [incident, setIncident] = useState<IncidentDetail | null>(null);
   const [mitreFindings, setMitreFindings] = useState<MitreFinding[]>([]);
   const [riskAssessment, setRiskAssessment] = useState<RiskAssessmentRecord | null>(null);
+  const [responsePlan, setResponsePlan] = useState<ResponsePlanRecord | null>(null);
   const [activeTab, setActiveTab] = useState<IncidentTab>("overview");
   const [loading, setLoading] = useState(true);
   const [mitreLoading, setMitreLoading] = useState(false);
   const [riskLoading, setRiskLoading] = useState(false);
+  const [responseLoading, setResponseLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [backendUnavailable, setBackendUnavailable] = useState(false);
   const [mitreError, setMitreError] = useState<string | null>(null);
   const [riskError, setRiskError] = useState<string | null>(null);
   const [riskNotFound, setRiskNotFound] = useState(false);
+  const [responseError, setResponseError] = useState<string | null>(null);
+  const [responseNotFound, setResponseNotFound] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -116,6 +121,34 @@ export function IncidentDetailPage() {
     void loadRisk();
   }, [activeTab, backendStatus, id]);
 
+  useEffect(() => {
+    if (!id || backendStatus !== "healthy" || activeTab !== "response") {
+      return;
+    }
+
+    const loadResponse = async () => {
+      setResponseLoading(true);
+      setResponseError(null);
+      setResponseNotFound(false);
+      try {
+        setResponsePlan(await getIncidentResponsePlan(id));
+      } catch (loadError) {
+        setResponsePlan(null);
+        if (isBackendUnavailableError(loadError)) {
+          setResponseError("Response plan is unavailable while the backend is offline.");
+        } else if (loadError instanceof Error && loadError.message.includes("not found")) {
+          setResponseNotFound(true);
+        } else {
+          setResponseError("Failed to load response plan.");
+        }
+      } finally {
+        setResponseLoading(false);
+      }
+    };
+
+    void loadResponse();
+  }, [activeTab, backendStatus, id]);
+
   if (loading) {
     return <LoadingSpinner label="Loading incident details..." />;
   }
@@ -192,6 +225,11 @@ export function IncidentDetailPage() {
             active={activeTab === "risk"}
             onClick={() => setActiveTab("risk")}
           />
+          <TabButton
+            label="Response Plan"
+            active={activeTab === "response"}
+            onClick={() => setActiveTab("response")}
+          />
         </nav>
       </div>
 
@@ -203,12 +241,19 @@ export function IncidentDetailPage() {
           loading={mitreLoading}
           error={mitreError}
         />
-      ) : (
+      ) : activeTab === "risk" ? (
         <RiskTab
           assessment={riskAssessment}
           loading={riskLoading}
           error={riskError}
           notFound={riskNotFound}
+        />
+      ) : (
+        <ResponseTab
+          plan={responsePlan}
+          loading={responseLoading}
+          error={responseError}
+          notFound={responseNotFound}
         />
       )}
     </div>
@@ -427,6 +472,81 @@ function RiskTab({
         </div>
       </div>
     </section>
+  );
+}
+
+function ResponseTab({
+  plan,
+  loading,
+  error,
+  notFound,
+}: {
+  plan: ResponsePlanRecord | null;
+  loading: boolean;
+  error: string | null;
+  notFound: boolean;
+}) {
+  if (loading) {
+    return <LoadingSpinner label="Loading response plan..." />;
+  }
+
+  if (error) {
+    return <EmptyState title="Response plan unavailable" description={error} />;
+  }
+
+  if (notFound || !plan) {
+    return (
+      <EmptyState
+        title="No response plan found"
+        description="Run the Response Planning Agent on this incident to generate an incident response plan."
+      />
+    );
+  }
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Response Plan</h3>
+        <SourceBadge source={plan.source} />
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <InfoCard label="Priority" value={plan.priority} />
+        <InfoCard label="Assessment Source" value={plan.source} />
+        <InfoCard label="Generated At" value={formatDate(plan.created_at)} />
+      </div>
+
+      <div className="mt-6 space-y-6">
+        <ActionList title="Containment" actions={plan.containment} />
+        <ActionList title="Eradication" actions={plan.eradication} />
+        <ActionList title="Recovery" actions={plan.recovery} />
+        <ActionList title="Monitoring" actions={plan.monitoring} />
+      </div>
+
+      <div className="mt-6">
+        <h4 className="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          Executive Summary
+        </h4>
+        <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">
+          {plan.executive_summary}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+function ActionList({ title, actions }: { title: string; actions: string[] }) {
+  return (
+    <div>
+      <h4 className="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+        {title}
+      </h4>
+      <ul className="mt-2 list-disc space-y-1 pl-5 text-sm leading-6 text-slate-700 dark:text-slate-300">
+        {actions.map((action) => (
+          <li key={action}>{action}</li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

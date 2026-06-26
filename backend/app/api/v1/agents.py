@@ -7,6 +7,7 @@ from app.db.database import get_db
 from app.schemas.evidence_agent import EvidenceCollectRequest, EvidenceCollectResponse
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
 from app.schemas.response import APIResponse
+from app.schemas.response_agent import ResponsePlanRequest, ResponsePlanResponse
 from app.schemas.risk_agent import RiskAssessmentRequest, RiskAssessmentResponse
 from app.schemas.threat_intelligence_agent import (
     ThreatIntelligenceRequest,
@@ -16,6 +17,7 @@ from app.schemas.mitre_agent import MitreMappingRequest, MitreMappingResponse
 from app.services.evidence_agent_service import EvidenceAgentService
 from app.services.mitre_agent_service import MitreAgentService
 from app.services.orchestration_service import OrchestrationService
+from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
 from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
 
@@ -274,6 +276,60 @@ def assess_risk(
     )
 
 
+def get_response_agent_service(db: Session = Depends(get_db)) -> ResponseAgentService:
+    """Provide a Response Planning Agent service bound to the request database session."""
+    return ResponseAgentService(db)
+
+
+@router.post(
+    "/response",
+    response_model=APIResponse[ResponsePlanResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Generate incident response plan",
+    description=(
+        "Produce a structured incident response plan from incident, evidence, "
+        "MITRE, threat intelligence, and risk assessment inputs. Uses Gemini when "
+        "available and automatically falls back to deterministic playbooks when AI "
+        "is unavailable. Recommendations only — never executes remediation."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Response plan generated",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Response plan generated",
+                        "data": {
+                            "source": "FALLBACK",
+                            "priority": "P2",
+                            "containment": ["Isolate affected endpoint"],
+                            "eradication": ["Block unauthorized PowerShell execution"],
+                            "recovery": ["Validate endpoint integrity before reconnection"],
+                            "monitoring": ["Monitor for repeated script execution"],
+                            "executive_summary": "Fallback response plan for suspicious PowerShell activity.",
+                        },
+                    }
+                }
+            },
+        },
+        status.HTTP_404_NOT_FOUND: {"description": "Incident not found"},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Validation error"},
+    },
+)
+def plan_response(
+    payload: ResponsePlanRequest,
+    service: ResponseAgentService = Depends(get_response_agent_service),
+) -> APIResponse[ResponsePlanResponse]:
+    """Generate an incident response plan."""
+    result = service.plan(payload)
+    return APIResponse(
+        success=True,
+        message="Response plan generated",
+        data=result,
+    )
+
+
 @router.post(
     "/orchestrate",
     response_model=APIResponse[OrchestrateResponse],
@@ -284,7 +340,8 @@ def assess_risk(
         "the Evidence Agent when a log file is present, invoke the MITRE Mapping "
         "Agent on the resulting evidence package, invoke the Threat Intelligence "
         "Agent on the same evidence package, invoke the Risk Assessment Agent, "
-        "and return a structured orchestration plan. Remaining specialist agents "
+        "invoke the Response Planning Agent, and return a structured orchestration "
+        "plan. Remaining specialist agents are placeholders."
     ),
     responses={
         status.HTTP_200_OK: {

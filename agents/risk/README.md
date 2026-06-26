@@ -50,11 +50,11 @@ RiskAssessment persistence + AgentExecution record
 ## Coordinator sequence
 
 ```text
-Coordinator → Evidence → MITRE → Threat Intelligence → Risk Assessment
+Coordinator → Evidence → MITRE → Threat Intelligence → Risk Assessment → Response Planning
 ```
 
 ## Constraints
 
 - AI-first with automatic fallback
 - Application never fails due to Gemini unavailability
-- No Response Planning, Executive Report, or Guardian agents in this sprint
+- No Executive Report or Guardian agents in Sprint 2
