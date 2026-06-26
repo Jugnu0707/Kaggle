@@ -10,6 +10,7 @@ from app.core.adk_runtime import initialize_adk_runtime
 from app.core.config import get_upload_path, settings
 from app.core.evidence_runtime import initialize_evidence_runtime
 from app.core.mcp_runtime import initialize_mcp_runtime
+from app.core.threat_intelligence_runtime import initialize_threat_intelligence_runtime
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import RequestLoggingMiddleware
@@ -45,6 +46,7 @@ async def lifespan(_application: FastAPI):
     get_upload_path()
     initialize_adk_runtime()
     initialize_evidence_runtime()
+    initialize_threat_intelligence_runtime()
     initialize_mcp_runtime()
     yield
 

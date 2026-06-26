@@ -7,8 +7,13 @@ from app.db.database import get_db
 from app.schemas.evidence_agent import EvidenceCollectRequest, EvidenceCollectResponse
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
 from app.schemas.response import APIResponse
+from app.schemas.threat_intelligence_agent import (
+    ThreatIntelligenceRequest,
+    ThreatIntelligenceResponse,
+)
 from app.services.evidence_agent_service import EvidenceAgentService
 from app.services.orchestration_service import OrchestrationService
+from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -85,6 +90,76 @@ def collect_evidence(
     )
 
 
+def get_threat_intelligence_agent_service(
+    db: Session = Depends(get_db),
+) -> ThreatIntelligenceAgentService:
+    """Provide a Threat Intelligence Agent service bound to the request database session."""
+    return ThreatIntelligenceAgentService(db)
+
+
+@router.post(
+    "/threat-intelligence",
+    response_model=APIResponse[ThreatIntelligenceResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Enrich evidence with threat intelligence",
+    description=(
+        "Extract indicators of compromise from an Evidence Package and return a "
+        "structured Threat Intelligence Report. Uses local rule-based extraction only."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Threat intelligence enrichment completed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Threat intelligence enrichment completed",
+                        "data": {
+                            "status": "completed",
+                            "ioc_count": 4,
+                            "report": {
+                                "total_iocs": 4,
+                                "ioc_breakdown": {"ipv4": 2, "url": 1, "sha256": 1},
+                                "suspicious_indicators": [
+                                    "External IPv4 address observed in evidence entries"
+                                ],
+                                "interesting_findings": [
+                                    "4 unique IOCs extracted from evidence sample"
+                                ],
+                                "data_quality_notes": [
+                                    "Sample entries were used for IOC extraction"
+                                ],
+                            },
+                            "iocs": [
+                                {
+                                    "type": "IPv4",
+                                    "value": "185.234.72.19",
+                                    "confidence": 90,
+                                    "source": "Application Log",
+                                }
+                            ],
+                        },
+                    }
+                }
+            },
+        },
+        status.HTTP_404_NOT_FOUND: {"description": "Incident or evidence not found"},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Validation error"},
+    },
+)
+def enrich_threat_intelligence(
+    payload: ThreatIntelligenceRequest,
+    service: ThreatIntelligenceAgentService = Depends(get_threat_intelligence_agent_service),
+) -> APIResponse[ThreatIntelligenceResponse]:
+    """Extract IOCs and generate a threat intelligence report."""
+    result = service.enrich(payload)
+    return APIResponse(
+        success=True,
+        message="Threat intelligence enrichment completed",
+        data=result,
+    )
+
+
 @router.post(
     "/orchestrate",
     response_model=APIResponse[OrchestrateResponse],
@@ -92,8 +167,9 @@ def collect_evidence(
     summary="Generate orchestration plan",
     description=(
         "Accept an incident ID or uploaded log ID, validate the request, invoke "
-        "the Evidence Agent when a log file is present, and return a structured "
-        "orchestration plan. Remaining specialist agents are placeholders."
+        "the Evidence Agent when a log file is present, invoke the Threat Intelligence "
+        "Agent on the resulting evidence package, and return a structured orchestration "
+        "plan. Remaining specialist agents are placeholders."
     ),
     responses={
         status.HTTP_200_OK: {

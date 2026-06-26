@@ -6,6 +6,7 @@ import uuid
 
 from agents.coordinator.models import OrchestrationPlan
 from agents.evidence.models import EvidenceResult
+from agents.threat_intelligence.models import ThreatIntelligenceResult
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -44,6 +45,10 @@ class OrchestrateResponse(OrchestrationPlan):
     evidence_result: EvidenceResult | None = Field(
         default=None,
         description="Evidence Agent output when a log file is orchestrated",
+    )
+    threat_intelligence_result: ThreatIntelligenceResult | None = Field(
+        default=None,
+        description="Threat Intelligence Agent output when evidence is orchestrated",
     )
 
     model_config = ConfigDict(

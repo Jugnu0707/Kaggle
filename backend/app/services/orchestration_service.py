@@ -16,6 +16,7 @@ from app.repositories.agent_execution_repository import AgentExecutionRepository
 from app.schemas.evidence_agent import EvidenceCollectRequest
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
 from app.services.evidence_agent_service import EvidenceAgentService
+from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
 
 logger = get_logger(__name__)
 
@@ -42,12 +43,19 @@ class OrchestrationService:
         plan = coordinator.orchestrate(coordinator_input, self.db)
 
         evidence_result = None
+        threat_intelligence_result = None
         if plan.incident_id is not None and plan.log_id is not None:
             evidence_result = EvidenceAgentService(self.db).collect(
                 EvidenceCollectRequest(
                     incident_id=plan.incident_id,
                     log_file_id=plan.log_id,
                 ),
+                workflow_id=plan.workflow_id,
+            )
+            threat_intelligence_result = ThreatIntelligenceAgentService(
+                self.db
+            ).enrich_from_package(
+                evidence_result.evidence_package,
                 workflow_id=plan.workflow_id,
             )
 
@@ -79,5 +87,15 @@ class OrchestrationService:
             {
                 **plan.model_dump(),
                 "evidence_result": evidence_result,
+                "threat_intelligence_result": (
+                    {
+                        "status": threat_intelligence_result.status,
+                        "ioc_count": threat_intelligence_result.ioc_count,
+                        "report": threat_intelligence_result.report,
+                        "iocs": threat_intelligence_result.iocs,
+                    }
+                    if threat_intelligence_result is not None
+                    else None
+                ),
             }
         )
