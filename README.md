@@ -2,6 +2,8 @@
 
 **Autonomous Enterprise Incident Response Platform**
 
+Kaggle — AI Agents Intensive Capstone (Agents for Business track)
+
 Oz AI is an enterprise platform for structured incident response. This repository contains the backend API, frontend dashboard, and project documentation.
 
 Sprint 1 establishes the application skeleton: FastAPI backend, React frontend, and Docker-based local development.
@@ -21,7 +23,7 @@ Sprint 1 establishes the application skeleton: FastAPI backend, React frontend, 
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Jugnu0707/Kaggle.git
 cd Kaggle
 ```
 
@@ -151,4 +153,4 @@ Project documentation lives in `docs/`:
 
 ## License
 
-MIT License. See `LICENSE` when added.
+MIT License. See `LICENSE`.
