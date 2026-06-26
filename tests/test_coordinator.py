@@ -11,14 +11,16 @@ def test_coordinator_initializes() -> None:
     coordinator.initialize()
 
     assert coordinator.is_loaded is True
+    assert coordinator.name == "coordinator"
+    assert coordinator.adk_agent is not None
 
 
-def test_coordinator_returns_placeholder_response() -> None:
-    """Coordinator returns the static placeholder without LLM execution."""
+def test_coordinator_returns_startup_response() -> None:
+    """Coordinator returns startup health information without orchestration."""
     coordinator = CoordinatorAgent()
     coordinator.initialize()
 
-    response = coordinator.handle_request({"incident_id": "test-123"})
+    response = coordinator.handle_request()
 
     assert response == {
         "status": "Coordinator initialized",

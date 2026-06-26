@@ -28,15 +28,16 @@ requires = ["setuptools>=75.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["app", "agents", "agents.coordinator"]
+packages = ["app", "agents", "agents.coordinator", "agents.evidence", "mcp", "mcp.tools"]
 
 [tool.setuptools.package-dir]
 "agents" = "../agents"
+"mcp" = "../mcp"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["../tests"]
+testpaths = ["../tests", "../agents/coordinator/tests", "../agents/evidence/tests"]
 
 [tool.black]
 line-length = 100
@@ -45,7 +46,7 @@ target-version = ["py312"]
 [tool.isort]
 profile = "black"
 line_length = 100
-known_first_party = ["agents", "app", "tests"]
+known_first_party = ["agents", "app", "mcp", "tests"]
 
 [tool.ruff]
 line-length = 100

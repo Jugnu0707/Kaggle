@@ -23,4 +23,5 @@ def test_health_endpoint(client: TestClient) -> None:
     assert data["status"] == "healthy"
     assert data["adk"] is True
     assert data["coordinator"] is True
+    assert data["mcp"] is True
     assert "timestamp" in data

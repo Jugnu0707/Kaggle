@@ -6,6 +6,10 @@ OPENAPI_TAGS = [
         "description": "Service health and connectivity checks.",
     },
     {
+        "name": "agents",
+        "description": "Coordinator orchestration and agent workflow endpoints.",
+    },
+    {
         "name": "dashboard",
         "description": "Aggregate metrics for the operations dashboard.",
     },

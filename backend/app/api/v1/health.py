@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.adk_runtime import get_adk_status
 from app.core.config import settings
+from app.core.mcp_runtime import is_mcp_running
 from app.core.state import get_uptime_seconds
 from app.db.database import check_database_connection, get_db
 from app.schemas.response import APIResponse
@@ -28,6 +29,7 @@ class HealthData(BaseModel):
                 "database_connected": True,
                 "adk": True,
                 "coordinator": True,
+                "mcp": True,
                 "timestamp": "2026-06-26T10:00:00+00:00",
             }
         }
@@ -40,6 +42,7 @@ class HealthData(BaseModel):
     database_connected: bool
     adk: bool = Field(description="Whether Google ADK is installed and verified")
     coordinator: bool = Field(description="Whether the Coordinator Agent is loaded")
+    mcp: bool = Field(description="Whether the MCP server is running")
     timestamp: str = Field(description="ISO-8601 timestamp for the health check")
 
 
@@ -47,14 +50,14 @@ class HealthData(BaseModel):
     "/health",
     response_model=APIResponse[HealthData],
     summary="Health check",
-    description="Return service health, uptime, database connectivity, and timestamp.",
+    description="Return service health, uptime, database connectivity, ADK, and MCP status.",
     responses={
         status.HTTP_200_OK: {"description": "Service is healthy"},
         status.HTTP_503_SERVICE_UNAVAILABLE: {"description": "Service is degraded"},
     },
 )
 def health_check(db: Session = Depends(get_db)) -> APIResponse[HealthData]:
-    """Return application health, uptime, database connectivity, and ADK status."""
+    """Return application health, uptime, database connectivity, ADK, and MCP status."""
     adk_status = get_adk_status()
     return APIResponse(
         success=True,
@@ -67,6 +70,7 @@ def health_check(db: Session = Depends(get_db)) -> APIResponse[HealthData]:
             database_connected=check_database_connection(db),
             adk=adk_status["adk"],
             coordinator=adk_status["coordinator"],
+            mcp=is_mcp_running(),
             timestamp=datetime.now(UTC).isoformat(),
         ),
     )

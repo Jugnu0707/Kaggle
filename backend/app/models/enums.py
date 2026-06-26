@@ -36,3 +36,13 @@ class UploadStatus(str, Enum):
     COMPLETED = "Completed"
     DELETED = "Deleted"
     FAILED = "Failed"
+
+
+class AgentExecutionStatus(str, Enum):
+    """Agent execution lifecycle status."""
+
+    ACCEPTED = "accepted"
+    PLANNED = "planned"
+    RUNNING = "running"
+    COMPLETED = "completed"
+    FAILED = "failed"

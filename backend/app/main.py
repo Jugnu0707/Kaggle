@@ -8,6 +8,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import api_v1_router
 from app.core.adk_runtime import initialize_adk_runtime
 from app.core.config import get_upload_path, settings
+from app.core.evidence_runtime import initialize_evidence_runtime
+from app.core.mcp_runtime import initialize_mcp_runtime
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import get_logger, setup_logging
 from app.core.middleware import RequestLoggingMiddleware
@@ -42,6 +44,8 @@ async def lifespan(_application: FastAPI):
     init_db()
     get_upload_path()
     initialize_adk_runtime()
+    initialize_evidence_runtime()
+    initialize_mcp_runtime()
     yield
 
 

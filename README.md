@@ -13,7 +13,10 @@ Oz AI is an enterprise platform for structured incident response. Sprint 1 deliv
 | Milestone | Status |
 |-----------|--------|
 | Sprint 1 — Foundation | **Complete** |
-| Sprint 2 — ADK framework setup | **In progress** |
+| Sprint 2 — ADK framework setup | **Complete** |
+| Sprint 2 — MCP infrastructure | **Complete** |
+| Sprint 2 — Coordinator orchestration | **Complete** |
+| Sprint 2 — Evidence Agent | **Complete** |
 | Sprint 3 — Ingestion & API expansion | Planned |
 | Sprint 4 — Evaluation & release hardening | Planned |
 
@@ -136,7 +139,8 @@ Expected fields in `data`:
 {
   "status": "healthy",
   "adk": true,
-  "coordinator": true
+  "coordinator": true,
+  "mcp": true
 }
 ```
 
@@ -145,6 +149,125 @@ Expected fields in `data`:
 ```bash
 python -m pytest ../tests/test_coordinator.py ../tests/test_adk_startup.py ../tests/test_health.py -v
 ```
+
+---
+
+## MCP tool layer (Sprint 2 Task 2)
+
+Oz AI mediates all agent-to-system interactions through **MCP (Model Context Protocol)** tools in `mcp/`. Sprint 2 Task 2 adds infrastructure only — no AI execution, LLM calls, or business logic.
+
+### Purpose
+
+The MCP layer provides a standardized, auditable interface between future ADK agents and backend services. Tools return structured `{success, data, error}` responses and are registered automatically at startup.
+
+### Registered tools (5)
+
+| Tool | Description |
+|------|-------------|
+| `health` | Application health status |
+| `list_incidents` | Paginated incident list (via `IncidentService`) |
+| `incident_details` | Single incident by ID (via `IncidentService`) |
+| `list_logs` | Uploaded log file metadata (via `LogService`) |
+| `system_info` | Version, database, ADK status, and MCP status |
+
+### Verify MCP setup
+
+1. Check startup logs for:
+
+```text
+Registered MCP tool: health — Return application health status.
+...
+MCP server started with 5 registered tools
+```
+
+2. Call the MCP status endpoint:
+
+```bash
+curl http://localhost:8000/api/v1/system/mcp
+```
+
+Expected response in `data`:
+
+```json
+{
+  "mcp": true,
+  "tool_count": 5,
+  "tools": [
+    "health",
+    "incident_details",
+    "list_incidents",
+    "list_logs",
+    "system_info"
+  ]
+}
+```
+
+3. Run MCP tests:
+
+```bash
+python -m pytest ../tests/test_mcp_registry.py ../tests/test_mcp_server.py ../tests/test_mcp_api.py -v
+```
+
+### Adding a new MCP tool
+
+1. Create a module under `mcp/tools/` (for example `mcp/tools/my_tool.py`).
+2. Define Pydantic **input** and **output** schemas.
+3. Decorate the handler with `@register_tool(name=..., description=..., input_model=..., output_model=...)`.
+4. Import the module in `mcp/tools/__init__.py` so it registers at startup.
+5. Add tests under `tests/` and update this README tool table.
+
+---
+
+## Coordinator orchestration (Sprint 2 Task 3)
+
+The Coordinator Agent uses Google ADK configuration (name, description, prompt, input/output schemas) to generate orchestration plans without executing specialist agents or LLM calls.
+
+### Orchestrate an incident
+
+```bash
+curl -X POST http://localhost:8000/api/v1/agents/orchestrate \
+  -H "Content-Type: application/json" \
+  -d '{"incident_id": "<incident-uuid>"}'
+```
+
+Example `data` response:
+
+```json
+{
+  "incident_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "workflow_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "accepted",
+  "workflow": [
+    "Evidence Agent",
+    "Threat Intelligence Agent",
+    "MITRE Mapping Agent",
+    "Risk Assessment Agent",
+    "Response Planning Agent",
+    "Executive Report Agent",
+    "Guardian Agent"
+  ]
+}
+```
+
+Each orchestration request creates an `agent_executions` record for the Coordinator Agent.
+
+---
+
+## Evidence Agent (Sprint 2 Task 4)
+
+The Evidence Agent collects, validates, normalizes, and summarizes uploaded log evidence. No LLM calls, MCP tools, or threat analysis are performed.
+
+### Collect evidence
+
+```bash
+curl -X POST http://localhost:8000/api/v1/agents/evidence \
+  -H "Content-Type: application/json" \
+  -d '{"incident_id": "<incident-uuid>", "log_file_id": "<log-uuid>"}'
+```
+
+Supported readable formats: `.log`, `.txt`, `.json`, `.csv`. EVTX files return a Sprint 2 parse note without failing.
+
+When orchestrating with both `incident_id` and `log_id`, the Coordinator invokes the Evidence Agent first and includes `evidence_result` in the orchestration response.
 
 ---
 
@@ -244,14 +367,17 @@ All endpoints return the standard envelope:
 }
 ```
 
-### Endpoints (13)
+### Endpoints (16)
 
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/` | Application root |
 | GET | `/api/v1/health` | Health check |
+| POST | `/api/v1/agents/orchestrate` | Generate Coordinator orchestration plan |
+| POST | `/api/v1/agents/evidence` | Collect and summarize log evidence |
 | GET | `/api/v1/dashboard/stats` | Dashboard metrics |
 | GET | `/api/v1/system/tables` | Database table listing |
+| GET | `/api/v1/system/mcp` | MCP server status and registered tools |
 | POST | `/api/v1/incidents` | Create incident |
 | GET | `/api/v1/incidents` | List incidents |
 | GET | `/api/v1/incidents/{id}` | Get incident |
@@ -283,7 +409,12 @@ All endpoints return the standard envelope:
 ```text
 Kaggle/
 ├── agents/                 # Google ADK agent definitions
-│   └── coordinator/        # Coordinator Agent (Sprint 2 Task 1)
+│   ├── coordinator/        # Coordinator Agent (Sprint 2 Task 3)
+│   └── evidence/           # Evidence Agent (Sprint 2 Task 4)
+├── mcp/                    # MCP tool server and registry (Sprint 2 Task 2)
+│   ├── server.py           # MCP server lifecycle
+│   ├── registry.py         # Tool registration and invocation
+│   └── tools/              # Registered MCP tool implementations
 ├── backend/
 │   ├── app/
 │   │   ├── api/            # HTTP route modules
@@ -364,6 +495,13 @@ python -m black --check ../backend/app ../tests
 - Minimal Coordinator Agent placeholder
 - Health endpoint ADK status reporting
 - Startup validation for ADK and Coordinator
+
+### Sprint 2 — MCP infrastructure
+
+- MCP server, registry, and five initial tools
+- `GET /api/v1/system/mcp` status endpoint
+- Health endpoint MCP status reporting
+- Tool registration tests (no duplicate registrations)
 
 ### Sprint 3 — Ingestion and API expansion
 

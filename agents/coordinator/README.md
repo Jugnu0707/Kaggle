@@ -1,22 +1,68 @@
 # Coordinator Agent
 
-Minimal Coordinator Agent placeholder for Google ADK framework integration (Sprint 2 Task 1).
+Google ADK Coordinator Agent for Oz AI incident response orchestration (Sprint 2 Task 3).
 
-## Current scope
+## Architecture
 
-- Initializes successfully at application startup
-- Accepts a request via `handle_request()`
-- Returns a static placeholder response (no LLM calls, no tools)
+```text
+POST /api/v1/agents/orchestrate
+        │
+        ▼
+OrchestrationService
+        │
+        ▼
+CoordinatorAgent (ADK config: name, description, prompt, schemas)
+        │
+        ▼
+CoordinatorOrchestrator
+   ├── validate_request()   → incident/log lookup via repositories
+   ├── route_agents()       → placeholder deterministic workflow
+   └── build_plan()         → OrchestrationPlan (no agent execution)
+        │
+        ▼
+AgentExecution record (Coordinator only)
+```
 
-## Placeholder response
+## ADK configuration
+
+| Property | Value |
+|----------|-------|
+| Name | `coordinator` |
+| Description | Orchestrates the Oz AI incident response pipeline |
+| System prompt | `prompt.md` |
+| Input schema | `CoordinatorInput` |
+| Output schema | `OrchestrationPlan` |
+| LLM | **Not invoked** in Sprint 2 Task 3 |
+
+## Orchestration plan example
 
 ```json
 {
-  "status": "Coordinator initialized",
-  "message": "Ready for agent orchestration."
+  "incident_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "log_id": null,
+  "workflow_id": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
+  "status": "accepted",
+  "workflow": [
+    "Evidence Agent",
+    "Threat Intelligence Agent",
+    "MITRE Mapping Agent",
+    "Risk Assessment Agent",
+    "Response Planning Agent",
+    "Executive Report Agent",
+    "Guardian Agent"
+  ]
 }
 ```
 
+## Current scope
+
+- Accept `incident_id` and/or `log_id`
+- Validate referenced resources
+- Generate orchestration plan (no downstream agent execution)
+- Log orchestration requests and persist `AgentExecution` records
+
 ## Future scope
 
-In later sprints, this agent will orchestrate the full incident response pipeline using Google ADK session management and specialist agents.
+- Invoke specialist agents via ADK session management
+- Checkpoint workflow state to the database at each stage
+- Guardian validation at pipeline boundaries

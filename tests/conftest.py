@@ -11,6 +11,7 @@ from app.db.database import Base, get_db
 from app.main import app
 
 EXPECTED_TABLES = {
+    "agent_executions",
     "audit_logs",
     "evidence",
     "incidents",

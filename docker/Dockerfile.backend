@@ -12,6 +12,7 @@ RUN apt-get update \
 COPY backend/pyproject.toml ./
 COPY backend/app ./app
 COPY agents /agents
+COPY mcp /mcp
 
 RUN pip install --no-cache-dir . \
     && mkdir -p /app/data /app/storage/uploads
