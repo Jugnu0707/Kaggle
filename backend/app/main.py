@@ -1,5 +1,7 @@
 """FastAPI application entry point for Oz AI."""
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -7,9 +9,17 @@ from app.api.v1 import api_v1_router
 from app.core.config import settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import get_logger, setup_logging
+from app.db.database import init_db
 from app.schemas.response import APIResponse
 
 logger = get_logger(__name__)
+
+
+@asynccontextmanager
+async def lifespan(_application: FastAPI):
+    """Initialize application resources on startup."""
+    init_db()
+    yield
 
 
 def create_app() -> FastAPI:
@@ -19,6 +29,7 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title=settings.app_name,
         version=settings.app_version,
+        lifespan=lifespan,
     )
 
     application.add_middleware(

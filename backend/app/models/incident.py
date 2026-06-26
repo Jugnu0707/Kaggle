@@ -1,0 +1,63 @@
+"""Incident ORM model."""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+from typing import TYPE_CHECKING
+
+from sqlalchemy import DateTime, Enum, Float, String, Text, Uuid, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.db.database import Base
+from app.models.enums import IncidentStatus, Severity
+
+if TYPE_CHECKING:
+    from app.models.evidence import Evidence
+    from app.models.investigation import Investigation
+
+
+class Incident(Base):
+    """Primary incident record."""
+
+    __tablename__ = "incidents"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid,
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    severity: Mapped[Severity] = mapped_column(
+        Enum(Severity, name="severity"),
+        nullable=False,
+    )
+    status: Mapped[IncidentStatus] = mapped_column(
+        Enum(IncidentStatus, name="incident_status"),
+        nullable=False,
+        default=IncidentStatus.NEW,
+    )
+    source: Mapped[str] = mapped_column(String(255), nullable=False)
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    evidence: Mapped[list["Evidence"]] = relationship(
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+    investigation: Mapped["Investigation | None"] = relationship(
+        back_populates="incident",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
