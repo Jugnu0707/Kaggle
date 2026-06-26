@@ -11,7 +11,13 @@ from app.db.database import Base, get_db
 from app.main import app
 
 
-EXPECTED_TABLES = {"audit_logs", "evidence", "incidents", "investigations"}
+EXPECTED_TABLES = {
+    "audit_logs",
+    "evidence",
+    "incidents",
+    "investigations",
+    "log_files",
+}
 
 
 @pytest.fixture

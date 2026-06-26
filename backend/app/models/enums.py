@@ -28,3 +28,11 @@ class InvestigationStatus(str, Enum):
     RUNNING = "Running"
     COMPLETED = "Completed"
     FAILED = "Failed"
+
+
+class UploadStatus(str, Enum):
+    """Log file upload lifecycle status."""
+
+    COMPLETED = "Completed"
+    DELETED = "Deleted"
+    FAILED = "Failed"

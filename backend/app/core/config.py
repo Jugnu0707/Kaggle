@@ -1,5 +1,7 @@
 """Application configuration loaded from environment variables."""
 
+from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,6 +23,23 @@ class Settings(BaseSettings):
         default="sqlite:///./oz_ai.db",
         validation_alias="DATABASE_URL",
     )
+    upload_dir: str = Field(
+        default="storage/uploads",
+        validation_alias="UPLOAD_DIR",
+    )
+    max_upload_size_bytes: int = Field(
+        default=52_428_800,
+        validation_alias="MAX_UPLOAD_SIZE_BYTES",
+    )
 
 
 settings = Settings()
+
+
+def get_upload_path() -> Path:
+    """Return the absolute upload directory path, creating it if needed."""
+    backend_dir = Path(__file__).resolve().parents[2]
+    repo_root = backend_dir.parent
+    upload_path = (repo_root / settings.upload_dir).resolve()
+    upload_path.mkdir(parents=True, exist_ok=True)
+    return upload_path

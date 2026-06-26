@@ -49,3 +49,7 @@ Thumbs.db
 
 # Evaluation outputs
 evaluation/results/
+
+# Uploaded log files (keep directory placeholder)
+storage/uploads/*
+!storage/uploads/.gitkeep

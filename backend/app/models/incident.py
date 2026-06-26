@@ -15,6 +15,7 @@ from app.models.enums import IncidentStatus, Severity
 if TYPE_CHECKING:
     from app.models.evidence import Evidence
     from app.models.investigation import Investigation
+    from app.models.log_file import LogFile
 
 
 class Incident(Base):
@@ -65,4 +66,7 @@ class Incident(Base):
         back_populates="incident",
         uselist=False,
         cascade="all, delete-orphan",
+    )
+    log_files: Mapped[list["LogFile"]] = relationship(
+        back_populates="incident",
     )
