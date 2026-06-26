@@ -1,19 +1,26 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Badge, EmptyState, LoadingSpinner } from "../components/ui";
+import { Badge, ConfidenceBadge, EmptyState, LoadingSpinner } from "../components/ui";
 import { useAppContext } from "../context/AppContext";
 import { isBackendUnavailableError } from "../services/apiClient";
 import { getIncident } from "../services/incidentService";
-import type { IncidentDetail } from "../types/api";
+import { getIncidentMitreMappings } from "../services/mitreService";
+import type { IncidentDetail, MitreFinding } from "../types/api";
 import { formatDate } from "../utils/format";
+
+type IncidentTab = "overview" | "mitre";
 
 export function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { backendStatus } = useAppContext();
   const [incident, setIncident] = useState<IncidentDetail | null>(null);
+  const [mitreFindings, setMitreFindings] = useState<MitreFinding[]>([]);
+  const [activeTab, setActiveTab] = useState<IncidentTab>("overview");
   const [loading, setLoading] = useState(true);
+  const [mitreLoading, setMitreLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [backendUnavailable, setBackendUnavailable] = useState(false);
+  const [mitreError, setMitreError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) {
@@ -49,6 +56,32 @@ export function IncidentDetailPage() {
 
     void loadIncident();
   }, [backendStatus, id]);
+
+  useEffect(() => {
+    if (!id || backendStatus !== "healthy" || activeTab !== "mitre") {
+      return;
+    }
+
+    const loadMitre = async () => {
+      setMitreLoading(true);
+      setMitreError(null);
+      try {
+        const response = await getIncidentMitreMappings(id);
+        setMitreFindings(response.items);
+      } catch (loadError) {
+        setMitreFindings([]);
+        if (isBackendUnavailableError(loadError)) {
+          setMitreError("MITRE mappings are unavailable while the backend is offline.");
+        } else {
+          setMitreError("Failed to load MITRE mappings.");
+        }
+      } finally {
+        setMitreLoading(false);
+      }
+    };
+
+    void loadMitre();
+  }, [activeTab, backendStatus, id]);
 
   if (loading) {
     return <LoadingSpinner label="Loading incident details..." />;
@@ -109,6 +142,61 @@ export function IncidentDetailPage() {
         <InfoCard label="Evidence Count" value={String(incident.evidence_count)} />
       </div>
 
+      <div className="border-b border-slate-200 dark:border-slate-800">
+        <nav className="-mb-px flex gap-6">
+          <TabButton
+            label="Overview"
+            active={activeTab === "overview"}
+            onClick={() => setActiveTab("overview")}
+          />
+          <TabButton
+            label="MITRE ATT&CK"
+            active={activeTab === "mitre"}
+            onClick={() => setActiveTab("mitre")}
+          />
+        </nav>
+      </div>
+
+      {activeTab === "overview" ? (
+        <OverviewTab incident={incident} />
+      ) : (
+        <MitreTab
+          findings={mitreFindings}
+          loading={mitreLoading}
+          error={mitreError}
+        />
+      )}
+    </div>
+  );
+}
+
+function TabButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`border-b-2 px-1 pb-3 text-sm font-medium transition-colors ${
+        active
+          ? "border-indigo-600 text-indigo-600 dark:border-indigo-400 dark:text-indigo-400"
+          : "border-transparent text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function OverviewTab({ incident }: { incident: IncidentDetail }) {
+  return (
+    <>
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
         <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Overview</h3>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -117,9 +205,7 @@ export function IncidentDetailPage() {
           <DetailItem label="Confidence Score" value={incident.confidence_score.toFixed(2)} />
           <DetailItem
             label="Investigation Status"
-            value={
-              incident.investigation?.investigation_status ?? "Not started"
-            }
+            value={incident.investigation?.investigation_status ?? "Not started"}
           />
         </dl>
       </section>
@@ -146,18 +232,85 @@ export function IncidentDetailPage() {
             />
             <DetailItem
               label="Duration (seconds)"
-              value={
-                incident.investigation.duration_seconds?.toString() ?? "Not available"
-              }
+              value={incident.investigation.duration_seconds?.toString() ?? "Not available"}
             />
-            <DetailItem
-              label="Status"
-              value={incident.investigation.investigation_status}
-            />
+            <DetailItem label="Status" value={incident.investigation.investigation_status} />
           </dl>
         </section>
       )}
-    </div>
+    </>
+  );
+}
+
+function MitreTab({
+  findings,
+  loading,
+  error,
+}: {
+  findings: MitreFinding[];
+  loading: boolean;
+  error: string | null;
+}) {
+  if (loading) {
+    return <LoadingSpinner label="Loading MITRE mappings..." />;
+  }
+
+  if (error) {
+    return <EmptyState title="MITRE mappings unavailable" description={error} />;
+  }
+
+  if (findings.length === 0) {
+    return (
+      <EmptyState
+        title="No MITRE mappings found"
+        description="Run the MITRE Mapping Agent on this incident to populate ATT&CK technique mappings."
+      />
+    );
+  }
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">MITRE ATT&CK</h3>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+          <thead>
+            <tr className="text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <th className="px-3 py-2">Technique</th>
+              <th className="px-3 py-2">Tactic</th>
+              <th className="px-3 py-2">Confidence</th>
+              <th className="px-3 py-2">Evidence</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-900">
+            {findings.map((finding) => (
+              <tr key={finding.id}>
+                <td className="px-3 py-4 text-sm text-slate-900 dark:text-slate-100">
+                  <div className="font-medium">{finding.technique_name}</div>
+                  <div className="font-mono text-xs text-slate-500 dark:text-slate-400">
+                    {finding.technique_id}
+                  </div>
+                </td>
+                <td className="px-3 py-4 text-sm text-slate-700 dark:text-slate-300">
+                  {finding.tactic}
+                </td>
+                <td className="px-3 py-4">
+                  <ConfidenceBadge value={finding.confidence} />
+                </td>
+                <td className="px-3 py-4 text-sm text-slate-700 dark:text-slate-300">
+                  <ul className="list-disc space-y-1 pl-4">
+                    {finding.evidence.map((item) => (
+                      <li key={item} className="font-mono text-xs">
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

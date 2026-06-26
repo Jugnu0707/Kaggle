@@ -17,6 +17,7 @@ EXPECTED_TABLES = {
     "incidents",
     "investigations",
     "log_files",
+    "mitre_findings",
 }
 
 

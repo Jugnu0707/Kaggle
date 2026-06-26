@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from app.models.evidence import Evidence
     from app.models.investigation import Investigation
     from app.models.log_file import LogFile
+    from app.models.mitre_finding import MitreFinding
 
 
 class Incident(Base):
@@ -69,4 +70,8 @@ class Incident(Base):
     )
     log_files: Mapped[list[LogFile]] = relationship(
         back_populates="incident",
+    )
+    mitre_findings: Mapped[list[MitreFinding]] = relationship(
+        back_populates="incident",
+        cascade="all, delete-orphan",
     )

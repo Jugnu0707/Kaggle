@@ -11,7 +11,9 @@ from app.schemas.threat_intelligence_agent import (
     ThreatIntelligenceRequest,
     ThreatIntelligenceResponse,
 )
+from app.schemas.mitre_agent import MitreMappingRequest, MitreMappingResponse
 from app.services.evidence_agent_service import EvidenceAgentService
+from app.services.mitre_agent_service import MitreAgentService
 from app.services.orchestration_service import OrchestrationService
 from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
 
@@ -160,6 +162,61 @@ def enrich_threat_intelligence(
     )
 
 
+def get_mitre_agent_service(db: Session = Depends(get_db)) -> MitreAgentService:
+    """Provide a MITRE Mapping Agent service bound to the request database session."""
+    return MitreAgentService(db)
+
+
+@router.post(
+    "/mitre",
+    response_model=APIResponse[MitreMappingResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Map evidence to MITRE ATT&CK",
+    description=(
+        "Map normalized evidence from an incident to MITRE ATT&CK techniques using "
+        "local rule-based matching. No external APIs or LLM reasoning are used."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "MITRE mapping completed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "MITRE mapping completed",
+                        "data": {
+                            "status": "completed",
+                            "techniques": [
+                                {
+                                    "technique_id": "T1059.001",
+                                    "technique_name": "PowerShell",
+                                    "tactic": "Execution",
+                                    "confidence": 96,
+                                    "matched_evidence": ["powershell.exe"],
+                                }
+                            ],
+                        },
+                    }
+                }
+            },
+        },
+        status.HTTP_404_NOT_FOUND: {"description": "Incident not found"},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Validation error"},
+    },
+)
+def map_mitre_techniques(
+    payload: MitreMappingRequest,
+    service: MitreAgentService = Depends(get_mitre_agent_service),
+) -> APIResponse[MitreMappingResponse]:
+    """Map incident evidence to MITRE ATT&CK techniques."""
+    result = service.map_incident(payload)
+    return APIResponse(
+        success=True,
+        message="MITRE mapping completed",
+        data=result,
+    )
+
+
 @router.post(
     "/orchestrate",
     response_model=APIResponse[OrchestrateResponse],
@@ -167,8 +224,9 @@ def enrich_threat_intelligence(
     summary="Generate orchestration plan",
     description=(
         "Accept an incident ID or uploaded log ID, validate the request, invoke "
-        "the Evidence Agent when a log file is present, invoke the Threat Intelligence "
-        "Agent on the resulting evidence package, and return a structured orchestration "
+        "the Evidence Agent when a log file is present, invoke the MITRE Mapping "
+        "Agent on the resulting evidence package, invoke the Threat Intelligence "
+        "Agent on the same evidence package, and return a structured orchestration "
         "plan. Remaining specialist agents are placeholders."
     ),
     responses={

@@ -14,8 +14,10 @@ from app.schemas.incident import (
     IncidentResponse,
     IncidentUpdate,
 )
+from app.schemas.mitre_agent import MitreFindingListResponse
 from app.schemas.response import APIResponse
 from app.services.incident_service import IncidentService
+from app.services.mitre_agent_service import MitreAgentService
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
 
@@ -23,6 +25,11 @@ router = APIRouter(prefix="/incidents", tags=["incidents"])
 def get_incident_service(db: Session = Depends(get_db)) -> IncidentService:
     """Provide an incident service bound to the request database session."""
     return IncidentService(db)
+
+
+def get_mitre_agent_service(db: Session = Depends(get_db)) -> MitreAgentService:
+    """Provide a MITRE Mapping Agent service bound to the request database session."""
+    return MitreAgentService(db)
 
 
 @router.post(
@@ -109,6 +116,30 @@ def get_incident(
         success=True,
         message="Incident retrieved successfully",
         data=incident,
+    )
+
+
+@router.get(
+    "/{incident_id}/mitre",
+    response_model=APIResponse[MitreFindingListResponse],
+    summary="Get MITRE ATT&CK mapping",
+    description="Return persisted MITRE ATT&CK technique mappings for an incident.",
+    responses={
+        200: {"description": "MITRE mappings retrieved successfully"},
+        404: {"description": "Incident not found"},
+        422: {"description": "Invalid incident ID format"},
+    },
+)
+def get_incident_mitre_mappings(
+    incident_id: uuid.UUID,
+    service: MitreAgentService = Depends(get_mitre_agent_service),
+) -> APIResponse[MitreFindingListResponse]:
+    """Return MITRE ATT&CK findings for an incident."""
+    findings = service.list_findings(incident_id)
+    return APIResponse(
+        success=True,
+        message="MITRE mappings retrieved successfully",
+        data=findings,
     )
 
 

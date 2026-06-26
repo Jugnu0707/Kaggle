@@ -91,3 +91,19 @@ export interface LogFileList {
   page_size: number;
   total_pages: number;
 }
+
+export interface MitreFinding {
+  id: string;
+  incident_id: string;
+  technique_id: string;
+  technique_name: string;
+  tactic: string;
+  confidence: number;
+  evidence: string[];
+  created_at: string;
+}
+
+export interface MitreFindingList {
+  items: MitreFinding[];
+  total: number;
+}

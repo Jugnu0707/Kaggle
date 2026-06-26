@@ -14,6 +14,12 @@ const severityStyles: Record<string, string> = {
   Failed: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
 };
 
+const confidenceStyles: Record<string, string> = {
+  High: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200",
+  Medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
+  Low: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+};
+
 interface BadgeProps {
   label: string;
   tone?: keyof typeof severityStyles;
@@ -25,6 +31,17 @@ export function Badge({ label, tone }: BadgeProps) {
   return (
     <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${style}`}>
       {label}
+    </span>
+  );
+}
+
+export function ConfidenceBadge({ value }: { value: number }) {
+  const tone = value >= 90 ? "High" : value >= 75 ? "Medium" : "Low";
+  const style = confidenceStyles[tone];
+
+  return (
+    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${style}`}>
+      {value}% · {tone}
     </span>
   );
 }

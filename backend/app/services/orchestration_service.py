@@ -16,6 +16,7 @@ from app.repositories.agent_execution_repository import AgentExecutionRepository
 from app.schemas.evidence_agent import EvidenceCollectRequest
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
 from app.services.evidence_agent_service import EvidenceAgentService
+from app.services.mitre_agent_service import MitreAgentService
 from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
 
 logger = get_logger(__name__)
@@ -43,6 +44,7 @@ class OrchestrationService:
         plan = coordinator.orchestrate(coordinator_input, self.db)
 
         evidence_result = None
+        mitre_result = None
         threat_intelligence_result = None
         if plan.incident_id is not None and plan.log_id is not None:
             evidence_result = EvidenceAgentService(self.db).collect(
@@ -50,6 +52,10 @@ class OrchestrationService:
                     incident_id=plan.incident_id,
                     log_file_id=plan.log_id,
                 ),
+                workflow_id=plan.workflow_id,
+            )
+            mitre_result = MitreAgentService(self.db).map_from_package(
+                evidence_result.evidence_package,
                 workflow_id=plan.workflow_id,
             )
             threat_intelligence_result = ThreatIntelligenceAgentService(
@@ -87,6 +93,15 @@ class OrchestrationService:
             {
                 **plan.model_dump(),
                 "evidence_result": evidence_result,
+                "mitre_result": (
+                    {
+                        "status": mitre_result.status,
+                        "techniques": mitre_result.techniques,
+                        "message": mitre_result.message,
+                    }
+                    if mitre_result is not None
+                    else None
+                ),
                 "threat_intelligence_result": (
                     {
                         "status": threat_intelligence_result.status,
