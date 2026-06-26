@@ -20,4 +20,7 @@ def test_health_endpoint(client: TestClient) -> None:
     assert isinstance(data["uptime_seconds"], int | float)
     assert data["uptime_seconds"] >= 0
     assert data["database_connected"] is True
+    assert data["status"] == "healthy"
+    assert data["adk"] is True
+    assert data["coordinator"] is True
     assert "timestamp" in data

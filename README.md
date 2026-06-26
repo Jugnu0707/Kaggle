@@ -13,7 +13,7 @@ Oz AI is an enterprise platform for structured incident response. Sprint 1 deliv
 | Milestone | Status |
 |-----------|--------|
 | Sprint 1 — Foundation | **Complete** |
-| Sprint 2 — Workflows & reports | Planned |
+| Sprint 2 — ADK framework setup | **In progress** |
 | Sprint 3 — Ingestion & API expansion | Planned |
 | Sprint 4 — Evaluation & release hardening | Planned |
 
@@ -72,8 +72,79 @@ Copy `.env.example` to `.env` for local development. Docker Compose supplies def
 | `UPLOAD_DIR` | Log file storage directory | `storage/uploads` |
 | `MAX_UPLOAD_SIZE_BYTES` | Maximum upload size in bytes | `52428800` (50 MB) |
 | `VITE_API_URL` | Frontend API base URL | `http://localhost:8000` |
+| `GOOGLE_API_KEY` | Google Gemini API key (required for LLM execution in later sprints) | *(empty)* |
+| `GOOGLE_MODEL` | Gemini model name for ADK agents | `gemini-2.5-pro` |
+| `ADK_APP_NAME` | ADK application identifier | `oz_ai` |
+| `ADK_ENABLE_TRACING` | Enable ADK OpenTelemetry tracing | `false` |
 
 Never commit `.env` files or secrets to the repository.
+
+---
+
+## Google ADK setup (Sprint 2 Task 1)
+
+Oz AI uses the [Google Agent Development Kit (ADK)](https://google.github.io/adk-docs/) for agent orchestration. Sprint 2 Task 1 adds framework setup only — no LLM calls or business logic.
+
+### Installation
+
+ADK is included in backend dependencies. From `backend/`:
+
+```bash
+pip install -e ".[dev]"
+```
+
+This installs `google-adk==2.3.0` along with the FastAPI backend.
+
+**Note:** `google-adk` requires FastAPI `>=0.133`, Pydantic `>=2.12`, and Uvicorn `>=0.34`. These versions are pinned in `backend/pyproject.toml` to satisfy ADK compatibility.
+
+### Required environment variables
+
+Add to your `.env` (see `.env.example`):
+
+| Variable | Required now | Description |
+|----------|--------------|-------------|
+| `GOOGLE_API_KEY` | No (Sprint 2 Task 1) | Gemini API key — needed when LLM agents are enabled |
+| `GOOGLE_MODEL` | No | Default model name (`gemini-2.5-pro`) |
+| `ADK_APP_NAME` | No | ADK application identifier |
+| `ADK_ENABLE_TRACING` | No | Enable ADK tracing (`false` by default) |
+
+### Verify ADK setup
+
+1. Start the backend:
+
+```bash
+cd backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+2. Check startup logs for:
+
+```text
+Google ADK import verified successfully
+Coordinator Agent initialized: loaded=True
+```
+
+3. Call the health endpoint:
+
+```bash
+curl http://localhost:8000/api/v1/health
+```
+
+Expected fields in `data`:
+
+```json
+{
+  "status": "healthy",
+  "adk": true,
+  "coordinator": true
+}
+```
+
+4. Run ADK tests:
+
+```bash
+python -m pytest ../tests/test_coordinator.py ../tests/test_adk_startup.py ../tests/test_health.py -v
+```
 
 ---
 
@@ -211,6 +282,8 @@ All endpoints return the standard envelope:
 
 ```text
 Kaggle/
+├── agents/                 # Google ADK agent definitions
+│   └── coordinator/        # Coordinator Agent (Sprint 2 Task 1)
 ├── backend/
 │   ├── app/
 │   │   ├── api/            # HTTP route modules
@@ -285,12 +358,12 @@ python -m black --check ../backend/app ../tests
 
 ## Roadmap
 
-### Sprint 2 — Workflows and reports
+### Sprint 2 — ADK framework setup
 
-- Incident create/edit UI in the dashboard
-- Reports module (backend API and frontend pages)
-- Database seed scripts and expanded integration tests
-- Enhanced audit trail visibility
+- Google ADK integration and configuration
+- Minimal Coordinator Agent placeholder
+- Health endpoint ADK status reporting
+- Startup validation for ADK and Coordinator
 
 ### Sprint 3 — Ingestion and API expansion
 

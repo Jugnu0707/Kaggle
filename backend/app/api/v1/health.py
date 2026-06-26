@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from app.core.adk_runtime import get_adk_status
 from app.core.config import settings
 from app.core.state import get_uptime_seconds
 from app.db.database import check_database_connection, get_db
@@ -20,19 +21,25 @@ class HealthData(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
+                "status": "healthy",
                 "application_name": "Oz AI",
                 "version": "0.1.0",
                 "uptime_seconds": 42.5,
                 "database_connected": True,
+                "adk": True,
+                "coordinator": True,
                 "timestamp": "2026-06-26T10:00:00+00:00",
             }
         }
     )
 
+    status: str = Field(default="healthy", description="Overall service health status")
     application_name: str
     version: str
     uptime_seconds: float
     database_connected: bool
+    adk: bool = Field(description="Whether Google ADK is installed and verified")
+    coordinator: bool = Field(description="Whether the Coordinator Agent is loaded")
     timestamp: str = Field(description="ISO-8601 timestamp for the health check")
 
 
@@ -47,15 +54,19 @@ class HealthData(BaseModel):
     },
 )
 def health_check(db: Session = Depends(get_db)) -> APIResponse[HealthData]:
-    """Return application health, uptime, and database connectivity."""
+    """Return application health, uptime, database connectivity, and ADK status."""
+    adk_status = get_adk_status()
     return APIResponse(
         success=True,
         message="Healthy",
         data=HealthData(
+            status="healthy",
             application_name=settings.app_name,
             version=settings.app_version,
             uptime_seconds=get_uptime_seconds(),
             database_connected=check_database_connection(db),
+            adk=adk_status["adk"],
+            coordinator=adk_status["coordinator"],
             timestamp=datetime.now(UTC).isoformat(),
         ),
     )
