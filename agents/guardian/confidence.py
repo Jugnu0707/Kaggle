@@ -1,0 +1,56 @@
+"""Confidence validation for AI-generated Guardian outputs."""
+
+from __future__ import annotations
+
+from typing import Any
+
+
+def extract_confidence_values(response: dict[str, Any]) -> list[int]:
+    """Collect confidence scores from a response payload."""
+    values: list[int] = []
+
+    def _walk(node: Any) -> None:
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key == "confidence" and isinstance(value, (int, float)):
+                    values.append(int(value))
+                else:
+                    _walk(value)
+        elif isinstance(node, list):
+            for item in node:
+                _walk(item)
+
+    _walk(response)
+    return values
+
+
+def validate_confidence(
+    response: dict[str, Any],
+    *,
+    min_confidence: int,
+    source: str | None = None,
+) -> list[str]:
+    """Return issues when AI confidence is below the configured threshold."""
+    if source and source.upper() != "AI":
+        return []
+
+    if "source" in response and str(response["source"]).upper() != "AI":
+        return []
+
+    confidence_values = extract_confidence_values(response)
+    if not confidence_values and "confidence" in response:
+        try:
+            confidence_values = [int(response["confidence"])]
+        except (TypeError, ValueError):
+            return ["Invalid confidence value"]
+
+    if not confidence_values:
+        return []
+
+    issues: list[str] = []
+    for value in confidence_values:
+        if value < min_confidence:
+            issues.append(
+                f"AI confidence {value}% is below the minimum threshold of {min_confidence}%"
+            )
+    return issues

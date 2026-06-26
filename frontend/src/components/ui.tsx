@@ -62,6 +62,23 @@ export function SourceBadge({ source }: { source: "AI" | "FALLBACK" }) {
   );
 }
 
+const validationStyles: Record<string, string> = {
+  approved: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200",
+  warning: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200",
+  rejected: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
+};
+
+export function ValidationBadge({ status }: { status: "approved" | "warning" | "rejected" }) {
+  const style = validationStyles[status] ?? validationStyles.approved;
+  const label = status.charAt(0).toUpperCase() + status.slice(1);
+
+  return (
+    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${style}`}>
+      {label}
+    </span>
+  );
+}
+
 const reputationStyles: Record<string, string> = {
   Malicious: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
   Suspicious: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200",

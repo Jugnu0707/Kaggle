@@ -6,6 +6,7 @@ import time
 from datetime import UTC, datetime
 
 from agents.coordinator.models import CoordinatorInput
+from agents.guardian.schemas import GuardianAgentName
 from sqlalchemy.orm import Session
 
 from app.core.adk_runtime import get_coordinator
@@ -21,6 +22,7 @@ from app.schemas.response_agent import ResponsePlanRequest
 from app.services.evidence_agent_service import EvidenceAgentService
 from app.services.executive_report_agent_service import ExecutiveReportAgentService
 from app.services.mitre_agent_service import MitreAgentService
+from app.services.orchestration_guardian import run_stage_with_guardian
 from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
 from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
@@ -56,34 +58,68 @@ class OrchestrationService:
         response_result = None
         executive_report_result = None
         if plan.incident_id is not None and plan.log_id is not None:
-            evidence_result = EvidenceAgentService(self.db).collect(
-                EvidenceCollectRequest(
-                    incident_id=plan.incident_id,
-                    log_file_id=plan.log_id,
+            evidence_result, _ = run_stage_with_guardian(
+                self.db,
+                incident_id=plan.incident_id,
+                workflow_id=plan.workflow_id,
+                agent=GuardianAgentName.EVIDENCE,
+                run_callable=lambda: EvidenceAgentService(self.db).collect(
+                    EvidenceCollectRequest(
+                        incident_id=plan.incident_id,
+                        log_file_id=plan.log_id,
+                    ),
+                    workflow_id=plan.workflow_id,
                 ),
-                workflow_id=plan.workflow_id,
             )
-            threat_intelligence_result = ThreatIntelligenceAgentService(
-                self.db
-            ).enrich_from_package(
-                evidence_result.evidence_package,
+            threat_intelligence_result, _ = run_stage_with_guardian(
+                self.db,
+                incident_id=plan.incident_id,
                 workflow_id=plan.workflow_id,
+                agent=GuardianAgentName.THREAT_INTELLIGENCE,
+                run_callable=lambda: ThreatIntelligenceAgentService(self.db).enrich_from_package(
+                    evidence_result.evidence_package,
+                    workflow_id=plan.workflow_id,
+                ),
             )
-            mitre_result = MitreAgentService(self.db).map_from_package(
-                evidence_result.evidence_package,
+            mitre_result, _ = run_stage_with_guardian(
+                self.db,
+                incident_id=plan.incident_id,
                 workflow_id=plan.workflow_id,
+                agent=GuardianAgentName.MITRE,
+                run_callable=lambda: MitreAgentService(self.db).map_from_package(
+                    evidence_result.evidence_package,
+                    workflow_id=plan.workflow_id,
+                ),
             )
-            risk_result = RiskAgentService(self.db).assess(
-                RiskAssessmentRequest(incident_id=plan.incident_id),
+            risk_result, _ = run_stage_with_guardian(
+                self.db,
+                incident_id=plan.incident_id,
                 workflow_id=plan.workflow_id,
+                agent=GuardianAgentName.RISK,
+                run_callable=lambda: RiskAgentService(self.db).assess(
+                    RiskAssessmentRequest(incident_id=plan.incident_id),
+                    workflow_id=plan.workflow_id,
+                ),
             )
-            response_result = ResponseAgentService(self.db).plan(
-                ResponsePlanRequest(incident_id=plan.incident_id),
+            response_result, _ = run_stage_with_guardian(
+                self.db,
+                incident_id=plan.incident_id,
                 workflow_id=plan.workflow_id,
+                agent=GuardianAgentName.RESPONSE,
+                run_callable=lambda: ResponseAgentService(self.db).plan(
+                    ResponsePlanRequest(incident_id=plan.incident_id),
+                    workflow_id=plan.workflow_id,
+                ),
             )
-            executive_report_result = ExecutiveReportAgentService(self.db).generate(
-                ExecutiveReportRequest(incident_id=plan.incident_id),
+            executive_report_result, _ = run_stage_with_guardian(
+                self.db,
+                incident_id=plan.incident_id,
                 workflow_id=plan.workflow_id,
+                agent=GuardianAgentName.EXECUTIVE_REPORT,
+                run_callable=lambda: ExecutiveReportAgentService(self.db).generate(
+                    ExecutiveReportRequest(incident_id=plan.incident_id),
+                    workflow_id=plan.workflow_id,
+                ),
             )
 
         duration_ms = int((time.perf_counter() - timer_start) * 1000)

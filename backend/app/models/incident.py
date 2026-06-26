@@ -19,8 +19,10 @@ if TYPE_CHECKING:
     from app.models.mitre_finding import MitreFinding
     from app.models.risk_assessment import RiskAssessment
     from app.models.executive_report import ExecutiveReport
+    from app.models.guardian_audit import GuardianAudit
     from app.models.response_plan import ResponsePlan
     from app.models.threat_intelligence_finding import ThreatIntelligenceFinding
+    from app.models.timeline_event import TimelineEvent
 
 
 class Incident(Base):
@@ -91,7 +93,15 @@ class Incident(Base):
         back_populates="incident",
         cascade="all, delete-orphan",
     )
+    guardian_audits: Mapped[list[GuardianAudit]] = relationship(
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
     threat_intelligence_findings: Mapped[list[ThreatIntelligenceFinding]] = relationship(
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+    timeline_events: Mapped[list[TimelineEvent]] = relationship(
         back_populates="incident",
         cascade="all, delete-orphan",
     )

@@ -150,6 +150,21 @@ export interface ExecutiveReportRecord {
   created_at: string;
 }
 
+export interface GuardianAuditRecord {
+  id: string;
+  incident_id: string | null;
+  agent_name: string;
+  validation_status: "approved" | "warning" | "rejected";
+  issues_found: string[];
+  action_taken: string;
+  created_at: string;
+}
+
+export interface GuardianAuditList {
+  items: GuardianAuditRecord[];
+  total: number;
+}
+
 export type ThreatReputation =
   | "Malicious"
   | "Suspicious"

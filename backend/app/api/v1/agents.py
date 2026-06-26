@@ -4,6 +4,11 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
+from app.schemas.guardian_agent import (
+    GuardianAuditListResponse,
+    GuardianValidateRequest,
+    GuardianValidateResponse,
+)
 from app.schemas.executive_report_agent import (
     ExecutiveReportRequest,
     ExecutiveReportResponse,
@@ -20,6 +25,7 @@ from app.schemas.threat_intelligence_agent import (
 from app.schemas.mitre_agent import MitreMappingRequest, MitreMappingResponse
 from app.services.evidence_agent_service import EvidenceAgentService
 from app.services.executive_report_agent_service import ExecutiveReportAgentService
+from app.services.guardian_agent_service import GuardianAgentService
 from app.services.mitre_agent_service import MitreAgentService
 from app.services.orchestration_service import OrchestrationService
 from app.services.response_agent_service import ResponseAgentService
@@ -390,6 +396,62 @@ def generate_executive_report(
     )
 
 
+def get_guardian_agent_service(db: Session = Depends(get_db)) -> GuardianAgentService:
+    """Provide a Guardian Agent service bound to the request database session."""
+    return GuardianAgentService(db)
+
+
+@router.post(
+    "/guardian/validate",
+    response_model=APIResponse[GuardianValidateResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Validate agent output with Guardian",
+    description=(
+        "Validate specialist agent outputs for schema compliance, prompt injection, "
+        "secret exposure, PII leakage, confidence thresholds, and mandatory fields. "
+        "Returns approved, warning, or rejected status with optional masked response."
+    ),
+    responses={
+        status.HTTP_200_OK: {
+            "description": "Guardian validation completed",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "success": True,
+                        "message": "Guardian validation completed",
+                        "data": {
+                            "status": "approved",
+                            "issues": [],
+                            "masked_response": {
+                                "source": "AI",
+                                "overall_risk": "High",
+                                "risk_score": 80,
+                                "priority": "P2",
+                            },
+                            "fallback_triggered": False,
+                            "retry_recommended": False,
+                        },
+                    }
+                }
+            },
+        },
+        status.HTTP_404_NOT_FOUND: {"description": "Incident not found"},
+        status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Validation error"},
+    },
+)
+def validate_with_guardian(
+    payload: GuardianValidateRequest,
+    service: GuardianAgentService = Depends(get_guardian_agent_service),
+) -> APIResponse[GuardianValidateResponse]:
+    """Validate an agent response through the Guardian governance layer."""
+    result = service.validate(payload)
+    return APIResponse(
+        success=True,
+        message="Guardian validation completed",
+        data=result,
+    )
+
+
 @router.post(
     "/orchestrate",
     response_model=APIResponse[OrchestrateResponse],
@@ -401,7 +463,7 @@ def generate_executive_report(
         "Agent on the resulting evidence package, invoke the Threat Intelligence "
         "Agent on the same evidence package, invoke the Risk Assessment Agent, "
         "invoke the Response Planning Agent, invoke the Executive Report Agent, "
-        "and return a structured orchestration plan. Guardian remains a placeholder."
+        "validate each stage with the Guardian Agent, and return a structured orchestration plan."
     ),
     responses={
         status.HTTP_200_OK: {

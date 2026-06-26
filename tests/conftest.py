@@ -21,7 +21,9 @@ EXPECTED_TABLES = {
     "risk_assessments",
     "response_plans",
     "executive_reports",
+    "guardian_audits",
     "threat_intelligence_findings",
+    "timeline_events",
 }
 
 

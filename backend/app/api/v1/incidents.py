@@ -2,11 +2,12 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.models.enums import IncidentStatus, Severity
+from app.schemas.guardian_agent import GuardianAuditListResponse
 from app.schemas.executive_report_agent import ExecutiveReportRecordResponse
 from app.schemas.incident import (
     IncidentCreate,
@@ -20,12 +21,15 @@ from app.schemas.response_agent import ResponsePlanRecordResponse
 from app.schemas.risk_agent import RiskAssessmentRecordResponse
 from app.schemas.threat_intelligence_agent import ThreatIntelligenceFindingListResponse
 from app.schemas.response import APIResponse
+from app.services.timeline.schemas import TimelineResponse
 from app.services.executive_report_agent_service import ExecutiveReportAgentService
+from app.services.guardian_agent_service import GuardianAgentService
 from app.services.incident_service import IncidentService
 from app.services.mitre_agent_service import MitreAgentService
 from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
 from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
+from app.services.timeline_service import TimelineService
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
 
@@ -62,6 +66,18 @@ def get_executive_report_agent_service(
 ) -> ExecutiveReportAgentService:
     """Provide an Executive Report Agent service bound to the request database session."""
     return ExecutiveReportAgentService(db)
+
+
+def get_guardian_agent_service(
+    db: Session = Depends(get_db),
+) -> GuardianAgentService:
+    """Provide a Guardian Agent service bound to the request database session."""
+    return GuardianAgentService(db)
+
+
+def get_timeline_service(db: Session = Depends(get_db)) -> TimelineService:
+    """Provide a timeline service bound to the request database session."""
+    return TimelineService(db)
 
 
 @router.post(
@@ -268,6 +284,84 @@ def get_incident_executive_report(
         success=True,
         message="Executive report retrieved successfully",
         data=report,
+    )
+
+
+@router.get(
+    "/{incident_id}/timeline",
+    response_model=APIResponse[TimelineResponse],
+    summary="Get investigation timeline",
+    description="Return a chronologically ordered investigation timeline reconstructed from incident artifacts.",
+    responses={
+        200: {"description": "Timeline retrieved successfully"},
+        404: {"description": "Incident not found"},
+        422: {"description": "Invalid incident ID format"},
+    },
+)
+def get_incident_timeline(
+    incident_id: uuid.UUID,
+    service: TimelineService = Depends(get_timeline_service),
+) -> APIResponse[TimelineResponse]:
+    """Return the investigation timeline for an incident."""
+    timeline = service.get_timeline(incident_id)
+    return APIResponse(
+        success=True,
+        message="Timeline retrieved successfully",
+        data=timeline,
+    )
+
+
+@router.get(
+    "/{incident_id}/timeline/export",
+    summary="Export investigation timeline",
+    description="Export the investigation timeline as JSON or Markdown.",
+    responses={
+        200: {"description": "Timeline exported successfully"},
+        404: {"description": "Incident not found or unsupported format"},
+        422: {"description": "Invalid incident ID or format"},
+    },
+)
+def export_incident_timeline(
+    incident_id: uuid.UUID,
+    format: str = Query(
+        default="json",
+        alias="format",
+        description="Export format: json or markdown",
+    ),
+    service: TimelineService = Depends(get_timeline_service),
+) -> Response:
+    """Export the investigation timeline in the requested format."""
+    content, media_type, suffix = service.export_timeline(incident_id, format)
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f"attachment; filename=timeline-{incident_id}.{suffix}",
+        },
+    )
+
+
+@router.get(
+    "/{incident_id}/guardian-audits",
+    response_model=APIResponse[GuardianAuditListResponse],
+    summary="Get Guardian audit records",
+    description="Return Guardian validation audit records for an incident.",
+    responses={
+        200: {"description": "Guardian audit records retrieved successfully"},
+        404: {"description": "Incident not found"},
+        422: {"description": "Invalid incident ID format"},
+    },
+)
+def get_incident_guardian_audits(
+    incident_id: uuid.UUID,
+    service: GuardianAgentService = Depends(get_guardian_agent_service),
+) -> APIResponse[GuardianAuditListResponse]:
+    """Return Guardian audit records for an incident."""
+    audits = service.list_audits(incident_id)
+    return APIResponse(
+        success=True,
+        message="Guardian audit records retrieved successfully",
+        data=audits,
     )
 
 
