@@ -58,15 +58,15 @@ class Incident(Base):
         default=None,
     )
 
-    evidence: Mapped[list["Evidence"]] = relationship(
+    evidence: Mapped[list[Evidence]] = relationship(
         back_populates="incident",
         cascade="all, delete-orphan",
     )
-    investigation: Mapped["Investigation | None"] = relationship(
+    investigation: Mapped[Investigation | None] = relationship(
         back_populates="incident",
         uselist=False,
         cascade="all, delete-orphan",
     )
-    log_files: Mapped[list["LogFile"]] = relationship(
+    log_files: Mapped[list[LogFile]] = relationship(
         back_populates="incident",
     )

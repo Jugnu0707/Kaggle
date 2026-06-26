@@ -67,7 +67,9 @@ class IncidentService:
     ) -> IncidentListResponse:
         """Return a paginated list of active incidents."""
         if page < 1:
-            raise AppException("Page must be greater than or equal to 1", status_code=400)
+            raise AppException(
+                "Page must be greater than or equal to 1", status_code=400
+            )
         if page_size < 1 or page_size > 100:
             raise AppException("Page size must be between 1 and 100", status_code=400)
 

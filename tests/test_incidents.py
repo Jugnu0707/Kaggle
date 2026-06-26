@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.audit_log import AuditLog
-from app.models.enums import IncidentStatus, InvestigationStatus, Severity
+from app.models.enums import InvestigationStatus
 from app.models.evidence import Evidence
 from app.models.investigation import Investigation
 
@@ -134,9 +134,7 @@ def test_update_incident(client: TestClient, db_session: Session) -> None:
     assert data["created_at"] == created["created_at"]
 
     audit_logs = list(
-        db_session.scalars(
-            select(AuditLog).where(AuditLog.action == "UPDATE")
-        ).all()
+        db_session.scalars(select(AuditLog).where(AuditLog.action == "UPDATE")).all()
     )
     assert len(audit_logs) == 1
 
@@ -158,9 +156,7 @@ def test_delete_incident(client: TestClient, db_session: Session) -> None:
     assert list_response.json()["data"]["total"] == 0
 
     audit_logs = list(
-        db_session.scalars(
-            select(AuditLog).where(AuditLog.action == "DELETE")
-        ).all()
+        db_session.scalars(select(AuditLog).where(AuditLog.action == "DELETE")).all()
     )
     assert len(audit_logs) == 1
 

@@ -16,7 +16,13 @@ class TablesData(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "tables": ["audit_logs", "evidence", "incidents", "investigations", "log_files"],
+                "tables": [
+                    "audit_logs",
+                    "evidence",
+                    "incidents",
+                    "investigations",
+                    "log_files",
+                ],
             }
         }
     )
@@ -31,7 +37,9 @@ class TablesData(BaseModel):
     description="Return all tables detected in the connected SQLite database.",
     responses={
         status.HTTP_200_OK: {"description": "Tables retrieved successfully"},
-        status.HTTP_500_INTERNAL_SERVER_ERROR: {"description": "Database introspection failed"},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {
+            "description": "Database introspection failed"
+        },
     },
 )
 def list_database_tables(db: Session = Depends(get_db)) -> APIResponse[TablesData]:

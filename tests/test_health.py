@@ -17,7 +17,7 @@ def test_health_endpoint(client: TestClient) -> None:
     data = body["data"]
     assert data["application_name"] == "Oz AI"
     assert data["version"] == "0.1.0"
-    assert isinstance(data["uptime_seconds"], (int, float))
+    assert isinstance(data["uptime_seconds"], int | float)
     assert data["uptime_seconds"] >= 0
     assert data["database_connected"] is True
     assert "timestamp" in data

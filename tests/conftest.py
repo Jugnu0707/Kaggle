@@ -10,7 +10,6 @@ import app.models  # noqa: F401
 from app.db.database import Base, get_db
 from app.main import app
 
-
 EXPECTED_TABLES = {
     "audit_logs",
     "evidence",

@@ -83,7 +83,13 @@ def test_list_log_files(client: TestClient, upload_dir) -> None:
     for index in range(2):
         client.post(
             "/api/v1/logs/upload",
-            files={"file": (f"file-{index}.txt", BytesIO(f"log {index}".encode()), "text/plain")},
+            files={
+                "file": (
+                    f"file-{index}.txt",
+                    BytesIO(f"log {index}".encode()),
+                    "text/plain",
+                )
+            },
         )
 
     response = client.get("/api/v1/logs?page=1&page_size=10")
@@ -98,7 +104,9 @@ def test_get_log_metadata(client: TestClient, upload_dir) -> None:
     """GET /logs/{id} returns metadata without file content."""
     upload_response = client.post(
         "/api/v1/logs/upload",
-        files={"file": ("audit.json", BytesIO(b'{"event":"test"}'), "application/json")},
+        files={
+            "file": ("audit.json", BytesIO(b'{"event":"test"}'), "application/json")
+        },
     )
     file_id = upload_response.json()["data"]["file_id"]
 

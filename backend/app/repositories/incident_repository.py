@@ -86,5 +86,9 @@ class IncidentRepository:
 
     def count_evidence(self, incident_id: uuid.UUID) -> int:
         """Return the number of evidence records for an incident."""
-        stmt = select(func.count()).select_from(Evidence).where(Evidence.incident_id == incident_id)
+        stmt = (
+            select(func.count())
+            .select_from(Evidence)
+            .where(Evidence.incident_id == incident_id)
+        )
         return self.db.scalar(stmt) or 0

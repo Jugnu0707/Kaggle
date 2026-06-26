@@ -101,15 +101,23 @@ class LogService:
             upload_timestamp=log_file.uploaded_at,
         )
 
-    def list_log_files(self, *, page: int = 1, page_size: int = 10) -> LogFileListResponse:
+    def list_log_files(
+        self, *, page: int = 1, page_size: int = 10
+    ) -> LogFileListResponse:
         """Return a paginated list of uploaded log files."""
         if page < 1:
-            raise AppException("Page must be greater than or equal to 1", status_code=400)
+            raise AppException(
+                "Page must be greater than or equal to 1", status_code=400
+            )
         if page_size < 1 or page_size > 100:
             raise AppException("Page size must be between 1 and 100", status_code=400)
 
-        log_files, total = self.log_repository.list_log_files(page=page, page_size=page_size)
-        items = [LogFileMetadataResponse.model_validate(log_file) for log_file in log_files]
+        log_files, total = self.log_repository.list_log_files(
+            page=page, page_size=page_size
+        )
+        items = [
+            LogFileMetadataResponse.model_validate(log_file) for log_file in log_files
+        ]
         return LogFileListResponse.from_results(
             items=items,
             total=total,

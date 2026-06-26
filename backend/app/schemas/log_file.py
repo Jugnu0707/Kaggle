@@ -41,7 +41,9 @@ class LogFileUploadResponse(BaseModel):
     file_id: uuid.UUID = Field(description="Unique identifier for the uploaded file")
     filename: str = Field(description="Original filename provided by the client")
     size: int = Field(ge=0, description="File size in bytes")
-    upload_timestamp: datetime = Field(description="UTC timestamp when the upload completed")
+    upload_timestamp: datetime = Field(
+        description="UTC timestamp when the upload completed"
+    )
 
 
 class LogFileMetadataResponse(BaseModel):

@@ -12,7 +12,7 @@ from app.schemas.investigation import InvestigationResponse
 _INCIDENT_EXAMPLE = {
     "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
     "title": "Suspicious outbound traffic detected",
-    "description": "Multiple connections to an unknown external IP from finance workstation.",
+    "description": "Unknown external IP connections from a finance workstation.",
     "severity": "High",
     "status": "Investigating",
     "source": "SIEM Alert",
@@ -30,7 +30,7 @@ class IncidentCreate(BaseModel):
         json_schema_extra={
             "example": {
                 "title": "Suspicious outbound traffic detected",
-                "description": "Multiple connections to an unknown external IP from finance workstation.",
+                "description": "Unknown external IP connections from a finance workstation.",
                 "severity": "High",
                 "source": "SIEM Alert",
                 "status": "New",
@@ -42,8 +42,12 @@ class IncidentCreate(BaseModel):
     title: str = Field(min_length=1, max_length=255, description="Short incident title")
     description: str = Field(min_length=1, description="Detailed incident description")
     severity: Severity = Field(description="Incident severity level")
-    source: str = Field(min_length=1, max_length=255, description="Alert or data source")
-    status: IncidentStatus = Field(default=IncidentStatus.NEW, description="Workflow status")
+    source: str = Field(
+        min_length=1, max_length=255, description="Alert or data source"
+    )
+    status: IncidentStatus = Field(
+        default=IncidentStatus.NEW, description="Workflow status"
+    )
     confidence_score: float = Field(
         default=0.0,
         ge=0.0,
@@ -74,7 +78,9 @@ class IncidentUpdate(BaseModel):
 class IncidentResponse(BaseModel):
     """Schema for incident API responses."""
 
-    model_config = ConfigDict(from_attributes=True, json_schema_extra={"example": _INCIDENT_EXAMPLE})
+    model_config = ConfigDict(
+        from_attributes=True, json_schema_extra={"example": _INCIDENT_EXAMPLE}
+    )
 
     id: uuid.UUID
     title: str

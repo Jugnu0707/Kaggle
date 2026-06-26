@@ -38,7 +38,9 @@ def validate_extension(filename: str) -> str:
 
 def validate_mime_type(extension: str, mime_type: str | None) -> str:
     """Validate MIME type against the allowed set for an extension."""
-    normalized_mime = (mime_type or "application/octet-stream").split(";")[0].strip().lower()
+    normalized_mime = (
+        (mime_type or "application/octet-stream").split(";")[0].strip().lower()
+    )
     allowed_mimes = ALLOWED_EXTENSIONS[extension]
 
     if normalized_mime not in allowed_mimes:

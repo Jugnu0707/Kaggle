@@ -68,7 +68,9 @@ def list_incidents(
     page_size: int = Query(default=10, ge=1, le=100, description="Items per page"),
     severity: Severity | None = Query(default=None, description="Filter by severity"),
     status: IncidentStatus | None = Query(default=None, description="Filter by status"),
-    search: str | None = Query(default=None, description="Search title and description"),
+    search: str | None = Query(
+        default=None, description="Search title and description"
+    ),
     service: IncidentService = Depends(get_incident_service),
 ) -> APIResponse[IncidentListResponse]:
     """List incidents with pagination and filters."""

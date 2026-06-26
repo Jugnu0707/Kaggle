@@ -20,24 +20,36 @@ class DashboardService:
         active_incidents = Incident.deleted_at.is_(None)
         active_logs = LogFile.deleted_at.is_(None)
 
-        total_incidents = self.db.scalar(
-            select(func.count()).select_from(Incident).where(active_incidents)
-        ) or 0
-        critical_incidents = self.db.scalar(
-            select(func.count())
-            .select_from(Incident)
-            .where(active_incidents, Incident.severity == Severity.CRITICAL)
-        ) or 0
-        high_incidents = self.db.scalar(
-            select(func.count())
-            .select_from(Incident)
-            .where(active_incidents, Incident.severity == Severity.HIGH)
-        ) or 0
-        uploaded_logs = self.db.scalar(
-            select(func.count())
-            .select_from(LogFile)
-            .where(active_logs, LogFile.upload_status != UploadStatus.DELETED)
-        ) or 0
+        total_incidents = (
+            self.db.scalar(
+                select(func.count()).select_from(Incident).where(active_incidents)
+            )
+            or 0
+        )
+        critical_incidents = (
+            self.db.scalar(
+                select(func.count())
+                .select_from(Incident)
+                .where(active_incidents, Incident.severity == Severity.CRITICAL)
+            )
+            or 0
+        )
+        high_incidents = (
+            self.db.scalar(
+                select(func.count())
+                .select_from(Incident)
+                .where(active_incidents, Incident.severity == Severity.HIGH)
+            )
+            or 0
+        )
+        uploaded_logs = (
+            self.db.scalar(
+                select(func.count())
+                .select_from(LogFile)
+                .where(active_logs, LogFile.upload_status != UploadStatus.DELETED)
+            )
+            or 0
+        )
 
         return DashboardStats(
             total_incidents=total_incidents,

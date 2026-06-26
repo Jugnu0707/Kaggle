@@ -17,6 +17,7 @@ services:
     volumes:
       - oz-ai-data:/app/data
       - oz-ai-uploads:/app/storage/uploads
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
@@ -38,6 +39,7 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:5173"]
       interval: 30s

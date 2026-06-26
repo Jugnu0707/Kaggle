@@ -14,7 +14,9 @@ logger = get_logger(__name__)
 class AppException(Exception):
     """Application-level exception with an HTTP status code."""
 
-    def __init__(self, message: str, status_code: int = status.HTTP_400_BAD_REQUEST) -> None:
+    def __init__(
+        self, message: str, status_code: int = status.HTTP_400_BAD_REQUEST
+    ) -> None:
         self.message = message
         self.status_code = status_code
         super().__init__(message)
@@ -82,7 +84,9 @@ async def validation_exception_handler(
     return _error_response(message, status.HTTP_422_UNPROCESSABLE_ENTITY)
 
 
-async def unhandled_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
+async def unhandled_exception_handler(
+    _request: Request, exc: Exception
+) -> JSONResponse:
     """Handle unexpected server errors."""
     logger.exception("Unhandled exception: %s", exc)
     return _error_response(

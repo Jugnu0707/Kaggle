@@ -48,4 +48,4 @@ class Investigation(Base):
         default=InvestigationStatus.PENDING,
     )
 
-    incident: Mapped["Incident"] = relationship(back_populates="investigation")
+    incident: Mapped[Incident] = relationship(back_populates="investigation")
