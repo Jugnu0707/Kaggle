@@ -27,8 +27,8 @@ os.chdir(BACKEND_ROOT)
 
 import app.models  # noqa: E402, F401
 
-from app.core.config import get_upload_path, settings  # noqa: E402
-from app.db.database import Base, SessionLocal, engine, init_db  # noqa: E402
+from app.core.config import get_database_path, get_upload_path, settings  # noqa: E402
+from app.db.database import SessionLocal, init_db  # noqa: E402
 from app.models.audit_log import AuditLog  # noqa: E402
 from app.models.enums import (  # noqa: E402
     IncidentStatus,
@@ -136,25 +136,6 @@ class SeedStats:
     log_files: int = 0
     audit_logs: int = 0
     skipped: list[str] = field(default_factory=list)
-
-
-def _ensure_current_schema() -> None:
-    """Fail fast when the local SQLite schema is older than the application models."""
-    from sqlalchemy import inspect
-
-    inspector = inspect(engine)
-    table_names = set(inspector.get_table_names())
-    if "incidents" not in table_names:
-        Base.metadata.create_all(bind=engine)
-        return
-
-    incident_columns = {column["name"] for column in inspector.get_columns("incidents")}
-    required_columns = {"deleted_at", "confidence_score"}
-    if not required_columns.issubset(incident_columns):
-        raise SystemExit(
-            "Database schema is outdated. Stop the backend, delete backend/oz_ai.db, "
-            "restart the backend, and run this script again."
-        )
 
 
 def _now() -> datetime:
@@ -547,7 +528,6 @@ def _ensure_log_file(
 def seed_demo_data() -> SeedStats:
     """Populate the database with demo records and return creation counts."""
     init_db()
-    _ensure_current_schema()
     upload_dir = get_upload_path()
     stats = SeedStats()
 
@@ -583,6 +563,7 @@ def seed_demo_data() -> SeedStats:
 def main() -> None:
     stats = seed_demo_data()
     print("Oz AI demo data seed complete.")
+    print(f"  Database path:          {get_database_path()}")
     print(f"  Incidents created:      {stats.incidents}")
     print(f"  Investigations created: {stats.investigations}")
     print(f"  Evidence records:       {stats.evidence}")

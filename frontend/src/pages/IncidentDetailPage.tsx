@@ -1,26 +1,31 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Badge, ConfidenceBadge, EmptyState, LoadingSpinner } from "../components/ui";
+import { Badge, ConfidenceBadge, EmptyState, LoadingSpinner, SourceBadge } from "../components/ui";
 import { useAppContext } from "../context/AppContext";
 import { isBackendUnavailableError } from "../services/apiClient";
 import { getIncident } from "../services/incidentService";
 import { getIncidentMitreMappings } from "../services/mitreService";
-import type { IncidentDetail, MitreFinding } from "../types/api";
+import { getIncidentRiskAssessment } from "../services/riskService";
+import type { IncidentDetail, MitreFinding, RiskAssessmentRecord } from "../types/api";
 import { formatDate } from "../utils/format";
 
-type IncidentTab = "overview" | "mitre";
+type IncidentTab = "overview" | "mitre" | "risk";
 
 export function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { backendStatus } = useAppContext();
   const [incident, setIncident] = useState<IncidentDetail | null>(null);
   const [mitreFindings, setMitreFindings] = useState<MitreFinding[]>([]);
+  const [riskAssessment, setRiskAssessment] = useState<RiskAssessmentRecord | null>(null);
   const [activeTab, setActiveTab] = useState<IncidentTab>("overview");
   const [loading, setLoading] = useState(true);
   const [mitreLoading, setMitreLoading] = useState(false);
+  const [riskLoading, setRiskLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [backendUnavailable, setBackendUnavailable] = useState(false);
   const [mitreError, setMitreError] = useState<string | null>(null);
+  const [riskError, setRiskError] = useState<string | null>(null);
+  const [riskNotFound, setRiskNotFound] = useState(false);
 
   useEffect(() => {
     if (!id) {
@@ -81,6 +86,34 @@ export function IncidentDetailPage() {
     };
 
     void loadMitre();
+  }, [activeTab, backendStatus, id]);
+
+  useEffect(() => {
+    if (!id || backendStatus !== "healthy" || activeTab !== "risk") {
+      return;
+    }
+
+    const loadRisk = async () => {
+      setRiskLoading(true);
+      setRiskError(null);
+      setRiskNotFound(false);
+      try {
+        setRiskAssessment(await getIncidentRiskAssessment(id));
+      } catch (loadError) {
+        setRiskAssessment(null);
+        if (isBackendUnavailableError(loadError)) {
+          setRiskError("Risk assessment is unavailable while the backend is offline.");
+        } else if (loadError instanceof Error && loadError.message.includes("not found")) {
+          setRiskNotFound(true);
+        } else {
+          setRiskError("Failed to load risk assessment.");
+        }
+      } finally {
+        setRiskLoading(false);
+      }
+    };
+
+    void loadRisk();
   }, [activeTab, backendStatus, id]);
 
   if (loading) {
@@ -154,16 +187,28 @@ export function IncidentDetailPage() {
             active={activeTab === "mitre"}
             onClick={() => setActiveTab("mitre")}
           />
+          <TabButton
+            label="Risk Assessment"
+            active={activeTab === "risk"}
+            onClick={() => setActiveTab("risk")}
+          />
         </nav>
       </div>
 
       {activeTab === "overview" ? (
         <OverviewTab incident={incident} />
-      ) : (
+      ) : activeTab === "mitre" ? (
         <MitreTab
           findings={mitreFindings}
           loading={mitreLoading}
           error={mitreError}
+        />
+      ) : (
+        <RiskTab
+          assessment={riskAssessment}
+          loading={riskLoading}
+          error={riskError}
+          notFound={riskNotFound}
         />
       )}
     </div>
@@ -309,6 +354,77 @@ function MitreTab({
             ))}
           </tbody>
         </table>
+      </div>
+    </section>
+  );
+}
+
+function RiskTab({
+  assessment,
+  loading,
+  error,
+  notFound,
+}: {
+  assessment: RiskAssessmentRecord | null;
+  loading: boolean;
+  error: string | null;
+  notFound: boolean;
+}) {
+  if (loading) {
+    return <LoadingSpinner label="Loading risk assessment..." />;
+  }
+
+  if (error) {
+    return <EmptyState title="Risk assessment unavailable" description={error} />;
+  }
+
+  if (notFound || !assessment) {
+    return (
+      <EmptyState
+        title="No risk assessment found"
+        description="Run the Risk Assessment Agent on this incident to generate an enterprise risk assessment."
+      />
+    );
+  }
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Risk Assessment</h3>
+        <SourceBadge source={assessment.source} />
+      </div>
+
+      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <InfoCard label="Risk Level" value={<Badge label={assessment.overall_risk} />} />
+        <InfoCard label="Risk Score" value={String(assessment.risk_score)} />
+        <InfoCard label="Priority" value={assessment.priority} />
+        <InfoCard label="Confidence" value={<ConfidenceBadge value={assessment.confidence} />} />
+      </div>
+
+      <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+        <DetailItem label="Likelihood" value={assessment.likelihood} />
+        <DetailItem label="Business Impact" value={assessment.business_impact} />
+        <DetailItem label="Assessment Source" value={assessment.source} />
+        <DetailItem label="Assessed At" value={formatDate(assessment.created_at)} />
+      </dl>
+
+      <div className="mt-6 space-y-4">
+        <div>
+          <h4 className="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Summary
+          </h4>
+          <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">
+            {assessment.summary}
+          </p>
+        </div>
+        <div>
+          <h4 className="text-sm font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Reasoning
+          </h4>
+          <p className="mt-2 text-sm leading-6 text-slate-700 dark:text-slate-300">
+            {assessment.reasoning}
+          </p>
+        </div>
       </div>
     </section>
   );

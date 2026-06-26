@@ -46,6 +46,22 @@ export function ConfidenceBadge({ value }: { value: number }) {
   );
 }
 
+const sourceStyles: Record<string, string> = {
+  AI: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200",
+  FALLBACK: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+};
+
+export function SourceBadge({ source }: { source: "AI" | "FALLBACK" }) {
+  const style = sourceStyles[source];
+  const label = source === "AI" ? "🤖 AI" : "⚙️ Fallback Engine";
+
+  return (
+    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${style}`}>
+      {label}
+    </span>
+  );
+}
+
 interface StatisticCardProps {
   title: string;
   value: number | string;

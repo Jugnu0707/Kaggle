@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from app.models.investigation import Investigation
     from app.models.log_file import LogFile
     from app.models.mitre_finding import MitreFinding
+    from app.models.risk_assessment import RiskAssessment
 
 
 class Incident(Base):
@@ -72,6 +73,10 @@ class Incident(Base):
         back_populates="incident",
     )
     mitre_findings: Mapped[list[MitreFinding]] = relationship(
+        back_populates="incident",
+        cascade="all, delete-orphan",
+    )
+    risk_assessments: Mapped[list[RiskAssessment]] = relationship(
         back_populates="incident",
         cascade="all, delete-orphan",
     )

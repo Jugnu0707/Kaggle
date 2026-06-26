@@ -7,6 +7,7 @@ import uuid
 from agents.coordinator.models import OrchestrationPlan
 from agents.evidence.models import EvidenceResult
 from agents.mitre.models import MitreMappingResult
+from agents.risk.models import RiskAssessmentResult
 from agents.threat_intelligence.models import ThreatIntelligenceResult
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -54,6 +55,10 @@ class OrchestrateResponse(OrchestrationPlan):
     threat_intelligence_result: ThreatIntelligenceResult | None = Field(
         default=None,
         description="Threat Intelligence Agent output when evidence is orchestrated",
+    )
+    risk_result: RiskAssessmentResult | None = Field(
+        default=None,
+        description="Risk Assessment Agent output when upstream agents are orchestrated",
     )
 
     model_config = ConfigDict(

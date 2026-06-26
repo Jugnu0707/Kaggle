@@ -152,6 +152,75 @@ python -m pytest ../tests/test_coordinator.py ../tests/test_adk_startup.py ../te
 
 ---
 
+## Google AI configuration (Sprint 2 — API verification)
+
+Oz AI reads Google AI Studio credentials from `.env` via `backend/app/core/ai_config.py`. Sprint 2 adds a **connectivity check only** — no agent reasoning or LLM pipelines are invoked.
+
+### Required environment variables
+
+Add to your `.env` (see `.env.example`):
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GOOGLE_API_KEY` | Google AI Studio / Gemini API key | *(empty)* |
+| `GOOGLE_MODEL` | Gemini model ID for verification | `gemini-2.5-pro` |
+
+Obtain an API key from [Google AI Studio](https://aistudio.google.com/apikey).
+
+### Verify Google AI connectivity
+
+1. Ensure `GOOGLE_API_KEY` and `GOOGLE_MODEL` are set in `.env`.
+
+2. Start the backend:
+
+```bash
+cd backend
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+3. Call the AI health endpoint:
+
+```bash
+curl http://localhost:8000/api/v1/ai/health
+```
+
+**Success** — API key and model are working:
+
+```json
+{
+  "success": true,
+  "message": "Google AI connectivity verified",
+  "data": {
+    "connected": true,
+    "model": "gemini-2.5-pro",
+    "response": "Oz AI Ready"
+  }
+}
+```
+
+**Failure** — missing or invalid configuration:
+
+```json
+{
+  "success": false,
+  "message": "Google AI connectivity check failed",
+  "data": {
+    "connected": false,
+    "error": "GOOGLE_API_KEY is not configured"
+  }
+}
+```
+
+4. Run AI verification tests:
+
+```bash
+python -m pytest ../tests/test_ai_health.py -v
+```
+
+The check sends the prompt `Reply with exactly: Oz AI Ready` to the configured model using the official `google-genai` SDK (installed with `google-adk`).
+
+---
+
 ## MCP tool layer (Sprint 2 Task 2)
 
 Oz AI mediates all agent-to-system interactions through **MCP (Model Context Protocol)** tools in `mcp/`. Sprint 2 Task 2 adds infrastructure only — no AI execution, LLM calls, or business logic.

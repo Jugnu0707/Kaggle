@@ -15,8 +15,10 @@ from app.models.enums import AgentExecutionStatus
 from app.repositories.agent_execution_repository import AgentExecutionRepository
 from app.schemas.evidence_agent import EvidenceCollectRequest
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
+from app.schemas.risk_agent import RiskAssessmentRequest
 from app.services.evidence_agent_service import EvidenceAgentService
 from app.services.mitre_agent_service import MitreAgentService
+from app.services.risk_agent_service import RiskAgentService
 from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
 
 logger = get_logger(__name__)
@@ -46,6 +48,7 @@ class OrchestrationService:
         evidence_result = None
         mitre_result = None
         threat_intelligence_result = None
+        risk_result = None
         if plan.incident_id is not None and plan.log_id is not None:
             evidence_result = EvidenceAgentService(self.db).collect(
                 EvidenceCollectRequest(
@@ -62,6 +65,10 @@ class OrchestrationService:
                 self.db
             ).enrich_from_package(
                 evidence_result.evidence_package,
+                workflow_id=plan.workflow_id,
+            )
+            risk_result = RiskAgentService(self.db).assess(
+                RiskAssessmentRequest(incident_id=plan.incident_id),
                 workflow_id=plan.workflow_id,
             )
 
@@ -110,6 +117,11 @@ class OrchestrationService:
                         "iocs": threat_intelligence_result.iocs,
                     }
                     if threat_intelligence_result is not None
+                    else None
+                ),
+                "risk_result": (
+                    risk_result.model_dump()
+                    if risk_result is not None
                     else None
                 ),
             }

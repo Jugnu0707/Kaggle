@@ -15,9 +15,11 @@ from app.schemas.incident import (
     IncidentUpdate,
 )
 from app.schemas.mitre_agent import MitreFindingListResponse
+from app.schemas.risk_agent import RiskAssessmentRecordResponse
 from app.schemas.response import APIResponse
 from app.services.incident_service import IncidentService
 from app.services.mitre_agent_service import MitreAgentService
+from app.services.risk_agent_service import RiskAgentService
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
 
@@ -30,6 +32,11 @@ def get_incident_service(db: Session = Depends(get_db)) -> IncidentService:
 def get_mitre_agent_service(db: Session = Depends(get_db)) -> MitreAgentService:
     """Provide a MITRE Mapping Agent service bound to the request database session."""
     return MitreAgentService(db)
+
+
+def get_risk_agent_service(db: Session = Depends(get_db)) -> RiskAgentService:
+    """Provide a Risk Assessment Agent service bound to the request database session."""
+    return RiskAgentService(db)
 
 
 @router.post(
@@ -140,6 +147,30 @@ def get_incident_mitre_mappings(
         success=True,
         message="MITRE mappings retrieved successfully",
         data=findings,
+    )
+
+
+@router.get(
+    "/{incident_id}/risk",
+    response_model=APIResponse[RiskAssessmentRecordResponse],
+    summary="Get risk assessment",
+    description="Return the latest persisted risk assessment for an incident.",
+    responses={
+        200: {"description": "Risk assessment retrieved successfully"},
+        404: {"description": "Incident or risk assessment not found"},
+        422: {"description": "Invalid incident ID format"},
+    },
+)
+def get_incident_risk_assessment(
+    incident_id: uuid.UUID,
+    service: RiskAgentService = Depends(get_risk_agent_service),
+) -> APIResponse[RiskAssessmentRecordResponse]:
+    """Return the latest risk assessment for an incident."""
+    assessment = service.get_latest_assessment(incident_id)
+    return APIResponse(
+        success=True,
+        message="Risk assessment retrieved successfully",
+        data=assessment,
     )
 
 

@@ -107,3 +107,18 @@ export interface MitreFindingList {
   items: MitreFinding[];
   total: number;
 }
+
+export interface RiskAssessmentRecord {
+  id: string;
+  incident_id: string;
+  source: "AI" | "FALLBACK";
+  overall_risk: Severity;
+  risk_score: number;
+  likelihood: string;
+  business_impact: string;
+  confidence: number;
+  priority: string;
+  summary: string;
+  reasoning: string;
+  created_at: string;
+}

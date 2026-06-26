@@ -36,6 +36,39 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
+def resolve_database_url(database_url: str | None = None) -> str:
+    """Resolve relative SQLite paths against the backend root directory."""
+    url = database_url or settings.database_url
+    if not url.startswith("sqlite"):
+        return url
+
+    if url.startswith("sqlite:////"):
+        return url
+
+    prefix = "sqlite:///"
+    if not url.startswith(prefix):
+        return url
+
+    path_part = url[len(prefix) :]
+    if path_part.startswith("./"):
+        path_part = path_part[2:]
+
+    db_path = Path(path_part)
+    if db_path.is_absolute():
+        return f"sqlite:///{db_path.as_posix()}"
+
+    backend_root = Path(__file__).resolve().parents[2]
+    resolved = (backend_root / db_path).resolve()
+    return f"sqlite:///{resolved.as_posix()}"
+
+
+def get_database_path() -> Path:
+    """Return the absolute filesystem path for the configured SQLite database."""
+    url = resolve_database_url()
+    path_part = url.removeprefix("sqlite:///")
+    return Path(path_part)
+
+
 def get_upload_path() -> Path:
     """Return the absolute upload directory path, creating it if needed."""
     configured = Path(settings.upload_dir)

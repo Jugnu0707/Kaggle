@@ -6,6 +6,10 @@ OPENAPI_TAGS = [
         "description": "Service health and connectivity checks.",
     },
     {
+        "name": "ai",
+        "description": "Google AI Studio API verification.",
+    },
+    {
         "name": "agents",
         "description": "Coordinator orchestration and agent workflow endpoints.",
     },

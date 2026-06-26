@@ -8,6 +8,7 @@ from app.models.incident import Incident
 from app.models.investigation import Investigation
 from app.models.log_file import LogFile
 from app.models.mitre_finding import MitreFinding
+from app.models.risk_assessment import RiskAssessment
 
 __all__ = [
     "AgentExecution",
@@ -20,6 +21,7 @@ __all__ = [
     "InvestigationStatus",
     "LogFile",
     "MitreFinding",
+    "RiskAssessment",
     "Severity",
     "UploadStatus",
 ]
