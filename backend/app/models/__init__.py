@@ -10,6 +10,7 @@ from app.models.log_file import LogFile
 from app.models.mitre_finding import MitreFinding
 from app.models.response_plan import ResponsePlan
 from app.models.risk_assessment import RiskAssessment
+from app.models.threat_intelligence_finding import ThreatIntelligenceFinding
 
 __all__ = [
     "AgentExecution",
@@ -25,5 +26,6 @@ __all__ = [
     "ResponsePlan",
     "RiskAssessment",
     "Severity",
+    "ThreatIntelligenceFinding",
     "UploadStatus",
 ]

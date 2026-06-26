@@ -1,32 +1,43 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Badge, ConfidenceBadge, EmptyState, LoadingSpinner, SourceBadge } from "../components/ui";
+import { Badge, ConfidenceBadge, EmptyState, LoadingSpinner, ReputationBadge, SourceBadge } from "../components/ui";
 import { useAppContext } from "../context/AppContext";
 import { isBackendUnavailableError } from "../services/apiClient";
 import { getIncident } from "../services/incidentService";
 import { getIncidentMitreMappings } from "../services/mitreService";
 import { getIncidentResponsePlan } from "../services/responseService";
 import { getIncidentRiskAssessment } from "../services/riskService";
-import type { IncidentDetail, MitreFinding, ResponsePlanRecord, RiskAssessmentRecord } from "../types/api";
+import { getIncidentThreatIntelligence } from "../services/threatIntelligenceService";
+import type {
+  IncidentDetail,
+  MitreFinding,
+  ResponsePlanRecord,
+  RiskAssessmentRecord,
+  ThreatIntelligenceFindingRecord,
+} from "../types/api";
 import { formatDate } from "../utils/format";
 
-type IncidentTab = "overview" | "mitre" | "risk" | "response";
+type IncidentTab = "overview" | "threat-intelligence" | "mitre" | "risk" | "response";
 
 export function IncidentDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { backendStatus } = useAppContext();
   const [incident, setIncident] = useState<IncidentDetail | null>(null);
   const [mitreFindings, setMitreFindings] = useState<MitreFinding[]>([]);
+  const [threatFindings, setThreatFindings] = useState<ThreatIntelligenceFindingRecord[]>([]);
   const [riskAssessment, setRiskAssessment] = useState<RiskAssessmentRecord | null>(null);
   const [responsePlan, setResponsePlan] = useState<ResponsePlanRecord | null>(null);
   const [activeTab, setActiveTab] = useState<IncidentTab>("overview");
   const [loading, setLoading] = useState(true);
   const [mitreLoading, setMitreLoading] = useState(false);
+  const [threatLoading, setThreatLoading] = useState(false);
   const [riskLoading, setRiskLoading] = useState(false);
   const [responseLoading, setResponseLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
   const [backendUnavailable, setBackendUnavailable] = useState(false);
   const [mitreError, setMitreError] = useState<string | null>(null);
+  const [threatError, setThreatError] = useState<string | null>(null);
+  const [threatNotFound, setThreatNotFound] = useState(false);
   const [riskError, setRiskError] = useState<string | null>(null);
   const [riskNotFound, setRiskNotFound] = useState(false);
   const [responseError, setResponseError] = useState<string | null>(null);
@@ -91,6 +102,38 @@ export function IncidentDetailPage() {
     };
 
     void loadMitre();
+  }, [activeTab, backendStatus, id]);
+
+  useEffect(() => {
+    if (!id || backendStatus !== "healthy" || activeTab !== "threat-intelligence") {
+      return;
+    }
+
+    const loadThreatIntel = async () => {
+      setThreatLoading(true);
+      setThreatError(null);
+      setThreatNotFound(false);
+      try {
+        const response = await getIncidentThreatIntelligence(id);
+        setThreatFindings(response.items);
+        if (response.total === 0) {
+          setThreatNotFound(true);
+        }
+      } catch (loadError) {
+        setThreatFindings([]);
+        if (isBackendUnavailableError(loadError)) {
+          setThreatError("Threat intelligence is unavailable while the backend is offline.");
+        } else if (loadError instanceof Error && loadError.message.includes("not found")) {
+          setThreatNotFound(true);
+        } else {
+          setThreatError("Failed to load threat intelligence findings.");
+        }
+      } finally {
+        setThreatLoading(false);
+      }
+    };
+
+    void loadThreatIntel();
   }, [activeTab, backendStatus, id]);
 
   useEffect(() => {
@@ -216,6 +259,11 @@ export function IncidentDetailPage() {
             onClick={() => setActiveTab("overview")}
           />
           <TabButton
+            label="Threat Intelligence"
+            active={activeTab === "threat-intelligence"}
+            onClick={() => setActiveTab("threat-intelligence")}
+          />
+          <TabButton
             label="MITRE ATT&CK"
             active={activeTab === "mitre"}
             onClick={() => setActiveTab("mitre")}
@@ -235,6 +283,13 @@ export function IncidentDetailPage() {
 
       {activeTab === "overview" ? (
         <OverviewTab incident={incident} />
+      ) : activeTab === "threat-intelligence" ? (
+        <ThreatIntelligenceTab
+          findings={threatFindings}
+          loading={threatLoading}
+          error={threatError}
+          notFound={threatNotFound}
+        />
       ) : activeTab === "mitre" ? (
         <MitreTab
           findings={mitreFindings}
@@ -329,6 +384,82 @@ function OverviewTab({ incident }: { incident: IncidentDetail }) {
         </section>
       )}
     </>
+  );
+}
+
+function ThreatIntelligenceTab({
+  findings,
+  loading,
+  error,
+  notFound,
+}: {
+  findings: ThreatIntelligenceFindingRecord[];
+  loading: boolean;
+  error: string | null;
+  notFound: boolean;
+}) {
+  if (loading) {
+    return <LoadingSpinner label="Loading threat intelligence..." />;
+  }
+
+  if (error) {
+    return <EmptyState title="Threat intelligence unavailable" description={error} />;
+  }
+
+  if (notFound || findings.length === 0) {
+    return (
+      <EmptyState
+        title="No threat intelligence findings"
+        description="Run the Threat Intelligence Agent on this incident to enrich extracted IOCs."
+      />
+    );
+  }
+
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Threat Intelligence</h3>
+      <div className="mt-4 overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+          <thead>
+            <tr className="text-left text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <th className="px-3 py-2">Indicator</th>
+              <th className="px-3 py-2">Type</th>
+              <th className="px-3 py-2">Reputation</th>
+              <th className="px-3 py-2">Confidence</th>
+              <th className="px-3 py-2">Source</th>
+              <th className="px-3 py-2">Description</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-900">
+            {findings.map((finding) => (
+              <tr key={finding.id}>
+                <td className="px-3 py-4 font-mono text-xs text-slate-900 dark:text-slate-100">
+                  {finding.indicator}
+                </td>
+                <td className="px-3 py-4 text-sm text-slate-700 dark:text-slate-300">
+                  {finding.indicator_type}
+                </td>
+                <td className="px-3 py-4">
+                  <ReputationBadge reputation={finding.reputation} />
+                </td>
+                <td className="px-3 py-4">
+                  <ConfidenceBadge value={finding.confidence} />
+                </td>
+                <td className="px-3 py-4">
+                  <SourceBadge source={finding.source} />
+                </td>
+                <td className="px-3 py-4 text-sm text-slate-700 dark:text-slate-300">
+                  <p>{finding.description}</p>
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                    {finding.analyst_notes}
+                  </p>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 

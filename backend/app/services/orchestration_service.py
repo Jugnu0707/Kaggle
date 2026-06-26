@@ -60,13 +60,13 @@ class OrchestrationService:
                 ),
                 workflow_id=plan.workflow_id,
             )
-            mitre_result = MitreAgentService(self.db).map_from_package(
-                evidence_result.evidence_package,
-                workflow_id=plan.workflow_id,
-            )
             threat_intelligence_result = ThreatIntelligenceAgentService(
                 self.db
             ).enrich_from_package(
+                evidence_result.evidence_package,
+                workflow_id=plan.workflow_id,
+            )
+            mitre_result = MitreAgentService(self.db).map_from_package(
                 evidence_result.evidence_package,
                 workflow_id=plan.workflow_id,
             )
@@ -117,12 +117,7 @@ class OrchestrationService:
                     else None
                 ),
                 "threat_intelligence_result": (
-                    {
-                        "status": threat_intelligence_result.status,
-                        "ioc_count": threat_intelligence_result.ioc_count,
-                        "report": threat_intelligence_result.report,
-                        "iocs": threat_intelligence_result.iocs,
-                    }
+                    threat_intelligence_result.model_dump()
                     if threat_intelligence_result is not None
                     else None
                 ),

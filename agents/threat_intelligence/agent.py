@@ -18,8 +18,9 @@ logger = get_logger(__name__)
 
 THREAT_INTELLIGENCE_AGENT_NAME = "threat_intelligence"
 THREAT_INTELLIGENCE_AGENT_DESCRIPTION = (
-    "Extracts indicators of compromise from evidence packages and produces "
-    "deterministic threat intelligence reports without external lookups."
+    "Extracts indicators of compromise from evidence and enriches them with "
+    "AI-generated context when Gemini is available, falling back to an offline "
+    "reputation engine when AI is unavailable."
 )
 PROMPT_PATH = Path(__file__).with_name("prompt.md")
 
@@ -30,7 +31,7 @@ def load_threat_intelligence_prompt() -> str:
 
 
 class ThreatIntelligenceAgent:
-    """Google ADK Threat Intelligence Agent — deterministic IOC extraction only."""
+    """Google ADK Threat Intelligence Agent — AI-first with offline fallback."""
 
     def __init__(self) -> None:
         self._loaded = False
@@ -44,21 +45,17 @@ class ThreatIntelligenceAgent:
 
     @property
     def name(self) -> str:
-        """Return the ADK agent name."""
         return self._adk_agent.name
 
     @property
     def description(self) -> str:
-        """Return the ADK agent description."""
         return self._adk_agent.description
 
     @property
     def adk_agent(self) -> Agent:
-        """Return the underlying Google ADK agent configuration."""
         return self._adk_agent
 
     def initialize(self) -> None:
-        """Initialize the Threat Intelligence Agent without invoking the LLM."""
         self._loaded = True
         logger.info(
             "Threat Intelligence Agent configured: name=%s description=%s",
@@ -68,7 +65,6 @@ class ThreatIntelligenceAgent:
 
     @property
     def is_loaded(self) -> bool:
-        """Return whether the Threat Intelligence Agent finished initialization."""
         return self._loaded
 
     def enrich(
@@ -76,5 +72,4 @@ class ThreatIntelligenceAgent:
         request: ThreatIntelligenceInput,
         db: Session,
     ) -> ThreatIntelligenceResult:
-        """Extract IOCs and generate a threat intelligence report."""
         return ThreatIntelligenceService(db).enrich(request)

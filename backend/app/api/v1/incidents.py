@@ -17,11 +17,13 @@ from app.schemas.incident import (
 from app.schemas.mitre_agent import MitreFindingListResponse
 from app.schemas.response_agent import ResponsePlanRecordResponse
 from app.schemas.risk_agent import RiskAssessmentRecordResponse
+from app.schemas.threat_intelligence_agent import ThreatIntelligenceFindingListResponse
 from app.schemas.response import APIResponse
 from app.services.incident_service import IncidentService
 from app.services.mitre_agent_service import MitreAgentService
 from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
+from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
 
@@ -44,6 +46,13 @@ def get_risk_agent_service(db: Session = Depends(get_db)) -> RiskAgentService:
 def get_response_agent_service(db: Session = Depends(get_db)) -> ResponseAgentService:
     """Provide a Response Planning Agent service bound to the request database session."""
     return ResponseAgentService(db)
+
+
+def get_threat_intelligence_agent_service(
+    db: Session = Depends(get_db),
+) -> ThreatIntelligenceAgentService:
+    """Provide a Threat Intelligence Agent service bound to the request database session."""
+    return ThreatIntelligenceAgentService(db)
 
 
 @router.post(
@@ -153,6 +162,30 @@ def get_incident_mitre_mappings(
     return APIResponse(
         success=True,
         message="MITRE mappings retrieved successfully",
+        data=findings,
+    )
+
+
+@router.get(
+    "/{incident_id}/threat-intelligence",
+    response_model=APIResponse[ThreatIntelligenceFindingListResponse],
+    summary="Get threat intelligence findings",
+    description="Return persisted threat intelligence findings for an incident.",
+    responses={
+        200: {"description": "Threat intelligence findings retrieved successfully"},
+        404: {"description": "Incident not found"},
+        422: {"description": "Invalid incident ID format"},
+    },
+)
+def get_incident_threat_intelligence(
+    incident_id: uuid.UUID,
+    service: ThreatIntelligenceAgentService = Depends(get_threat_intelligence_agent_service),
+) -> APIResponse[ThreatIntelligenceFindingListResponse]:
+    """Return threat intelligence findings for an incident."""
+    findings = service.list_findings(incident_id)
+    return APIResponse(
+        success=True,
+        message="Threat intelligence findings retrieved successfully",
         data=findings,
     )
 

@@ -62,6 +62,24 @@ export function SourceBadge({ source }: { source: "AI" | "FALLBACK" }) {
   );
 }
 
+const reputationStyles: Record<string, string> = {
+  Malicious: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
+  Suspicious: "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-200",
+  Unknown: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  Safe: "bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200",
+  Informational: "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200",
+};
+
+export function ReputationBadge({ reputation }: { reputation: string }) {
+  const style = reputationStyles[reputation] ?? reputationStyles.Unknown;
+
+  return (
+    <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${style}`}>
+      {reputation}
+    </span>
+  );
+}
+
 interface StatisticCardProps {
   title: string;
   value: number | string;

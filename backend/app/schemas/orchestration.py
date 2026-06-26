@@ -9,7 +9,7 @@ from agents.evidence.models import EvidenceResult
 from agents.mitre.models import MitreMappingResult
 from agents.risk.models import RiskAssessmentResult
 from agents.response.models import ResponsePlanResult
-from agents.threat_intelligence.models import ThreatIntelligenceResult
+from app.schemas.threat_intelligence_agent import ThreatIntelligenceResponse
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -53,7 +53,7 @@ class OrchestrateResponse(OrchestrationPlan):
         default=None,
         description="MITRE Mapping Agent output when evidence is orchestrated",
     )
-    threat_intelligence_result: ThreatIntelligenceResult | None = Field(
+    threat_intelligence_result: ThreatIntelligenceResponse | None = Field(
         default=None,
         description="Threat Intelligence Agent output when evidence is orchestrated",
     )

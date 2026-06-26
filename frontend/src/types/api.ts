@@ -135,3 +135,28 @@ export interface ResponsePlanRecord {
   executive_summary: string;
   created_at: string;
 }
+
+export type ThreatReputation =
+  | "Malicious"
+  | "Suspicious"
+  | "Unknown"
+  | "Safe"
+  | "Informational";
+
+export interface ThreatIntelligenceFindingRecord {
+  id: string;
+  incident_id: string;
+  indicator: string;
+  indicator_type: string;
+  reputation: ThreatReputation;
+  confidence: number;
+  source: "AI" | "FALLBACK";
+  description: string;
+  analyst_notes: string;
+  created_at: string;
+}
+
+export interface ThreatIntelligenceFindingList {
+  items: ThreatIntelligenceFindingRecord[];
+  total: number;
+}

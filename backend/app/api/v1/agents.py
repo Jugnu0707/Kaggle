@@ -109,8 +109,10 @@ def get_threat_intelligence_agent_service(
     status_code=status.HTTP_200_OK,
     summary="Enrich evidence with threat intelligence",
     description=(
-        "Extract indicators of compromise from an Evidence Package and return a "
-        "structured Threat Intelligence Report. Uses local rule-based extraction only."
+        "Extract and enrich indicators of compromise from incident evidence. "
+        "Uses Gemini when available and automatically falls back to the offline "
+        "reputation engine when AI is unavailable. Enrichment only — never blocks "
+        "or quarantines."
     ),
     responses={
         status.HTTP_200_OK: {
@@ -122,26 +124,16 @@ def get_threat_intelligence_agent_service(
                         "message": "Threat intelligence enrichment completed",
                         "data": {
                             "status": "completed",
-                            "ioc_count": 4,
-                            "report": {
-                                "total_iocs": 4,
-                                "ioc_breakdown": {"ipv4": 2, "url": 1, "sha256": 1},
-                                "suspicious_indicators": [
-                                    "External IPv4 address observed in evidence entries"
-                                ],
-                                "interesting_findings": [
-                                    "4 unique IOCs extracted from evidence sample"
-                                ],
-                                "data_quality_notes": [
-                                    "Sample entries were used for IOC extraction"
-                                ],
-                            },
-                            "iocs": [
+                            "ioc_count": 2,
+                            "findings": [
                                 {
-                                    "type": "IPv4",
-                                    "value": "185.234.72.19",
-                                    "confidence": 90,
-                                    "source": "Application Log",
+                                    "indicator": "185.234.72.19",
+                                    "indicator_type": "IPv4",
+                                    "reputation": "Unknown",
+                                    "confidence": 85,
+                                    "source": "FALLBACK",
+                                    "description": "Public IPv4 address requires analyst review",
+                                    "analyst_notes": "Offline enrichment applied.",
                                 }
                             ],
                         },
@@ -149,7 +141,7 @@ def get_threat_intelligence_agent_service(
                 }
             },
         },
-        status.HTTP_404_NOT_FOUND: {"description": "Incident or evidence not found"},
+        status.HTTP_404_NOT_FOUND: {"description": "Incident not found"},
         status.HTTP_422_UNPROCESSABLE_CONTENT: {"description": "Validation error"},
     },
 )

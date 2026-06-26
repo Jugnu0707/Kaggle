@@ -20,6 +20,7 @@ EXPECTED_TABLES = {
     "mitre_findings",
     "risk_assessments",
     "response_plans",
+    "threat_intelligence_findings",
 }
 
 
