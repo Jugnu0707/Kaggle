@@ -1,4 +1,6 @@
-import { useCallback, useRef, useState, type DragEvent, type ChangeEvent } from "react";
+import { useCallback, useRef, useState, type ChangeEvent, type DragEvent } from "react";
+import { useAppContext } from "../context/AppContext";
+import { getErrorMessage } from "../services/apiClient";
 import { validateLogFile } from "../services/logService";
 
 interface FileUploadProps {
@@ -7,29 +9,35 @@ interface FileUploadProps {
 }
 
 export function FileUpload({ onUpload, disabled = false }: FileUploadProps) {
+  const { showToast } = useAppContext();
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
-  const handleFile = useCallback((file: File | undefined) => {
-    if (!file) {
-      return;
-    }
-    const validationError = validateLogFile(file);
-    if (validationError) {
-      setError(validationError);
-      setSelectedFile(null);
-      setSuccess(null);
-      return;
-    }
-    setSelectedFile(file);
-    setError(null);
-    setSuccess(null);
-  }, []);
+  const handleFile = useCallback(
+    (file: File | undefined) => {
+      if (!file) {
+        return;
+      }
+      const validationError = validateLogFile(file);
+      if (validationError) {
+        setError(validationError);
+        setSelectedFile(null);
+        showToast({
+          title: "Invalid file",
+          message: validationError,
+          variant: "error",
+        });
+        return;
+      }
+      setSelectedFile(file);
+      setError(null);
+    },
+    [showToast],
+  );
 
   const onDrop = (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -53,15 +61,24 @@ export function FileUpload({ onUpload, disabled = false }: FileUploadProps) {
     setUploading(true);
     setProgress(0);
     setError(null);
-    setSuccess(null);
 
     try {
       await onUpload(selectedFile, setProgress);
-      setSuccess(`${selectedFile.name} uploaded successfully.`);
+      showToast({
+        title: "Upload complete",
+        message: `${selectedFile.name} uploaded successfully.`,
+        variant: "success",
+      });
       setSelectedFile(null);
       setProgress(100);
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Upload failed");
+      const message = getErrorMessage(uploadError);
+      setError(message);
+      showToast({
+        title: "Upload failed",
+        message,
+        variant: "error",
+      });
     } finally {
       setUploading(false);
     }
@@ -140,12 +157,6 @@ export function FileUpload({ onUpload, disabled = false }: FileUploadProps) {
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
           {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700 dark:border-green-900 dark:bg-green-950/30 dark:text-green-300">
-          {success}
         </div>
       )}
     </div>

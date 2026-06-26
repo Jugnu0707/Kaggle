@@ -176,7 +176,7 @@ def test_validation_failure(client: TestClient) -> None:
     )
     assert response.status_code == 422
     assert response.json()["success"] is False
-    assert response.json()["message"] == "Validation error"
+    assert response.json()["message"].startswith("Validation error:")
 
 
 def test_get_incident_not_found(client: TestClient) -> None:

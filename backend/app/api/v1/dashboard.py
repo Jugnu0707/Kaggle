@@ -1,6 +1,7 @@
 """Dashboard metrics API routes."""
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
+
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -20,8 +21,13 @@ def get_dashboard_service(db: Session = Depends(get_db)) -> DashboardService:
     "/stats",
     response_model=APIResponse[DashboardStats],
     summary="Get dashboard statistics",
-    description="Return aggregate incident and log upload metrics for the dashboard.",
-    responses={200: {"description": "Dashboard statistics retrieved successfully"}},
+    description=(
+        "Return aggregate metrics used by the operations dashboard including "
+        "incident counts by severity and uploaded log totals."
+    ),
+    responses={
+        status.HTTP_200_OK: {"description": "Dashboard statistics retrieved successfully"},
+    },
 )
 def get_dashboard_stats(
     service: DashboardService = Depends(get_dashboard_service),

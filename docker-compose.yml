@@ -6,12 +6,23 @@ services:
     container_name: oz-ai-backend
     ports:
       - "8000:8000"
-    env_file:
-      - .env
+    environment:
+      APP_NAME: Oz AI
+      APP_VERSION: 0.1.0
+      HOST: 0.0.0.0
+      PORT: 8000
+      DATABASE_URL: sqlite:////app/data/oz_ai.db
+      UPLOAD_DIR: storage/uploads
+      MAX_UPLOAD_SIZE_BYTES: 52428800
     volumes:
-      - ./backend/app:/app/app
       - oz-ai-data:/app/data
-    working_dir: /app
+      - oz-ai-uploads:/app/storage/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   frontend:
     build:
@@ -25,10 +36,15 @@ services:
     environment:
       VITE_API_URL: http://localhost:8000
     depends_on:
-      - backend
-    volumes:
-      - ./frontend/src:/app/src
-      - ./frontend/index.html:/app/index.html
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5173"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
 
 volumes:
   oz-ai-data:
+  oz-ai-uploads:

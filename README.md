@@ -1,12 +1,40 @@
 # Oz AI
 
-**Autonomous Enterprise Incident Response Platform**
+**Enterprise Incident Response Platform**
 
 Kaggle — AI Agents Intensive Capstone (Agents for Business track)
 
-Oz AI is an enterprise platform for structured incident response. This repository contains the backend API, frontend dashboard, and project documentation.
+Oz AI is an enterprise platform for structured incident response. Sprint 1 delivers the core backend API, React dashboard, log upload workflow, and Docker-based local development.
 
-Sprint 1 establishes the application skeleton: FastAPI backend, React frontend, and Docker-based local development.
+---
+
+## Features (Sprint 1)
+
+- **Backend API** — FastAPI with standardized `APIResponse` envelope, request logging, and centralized exception handling
+- **Incident management** — Create, list, retrieve, update, and soft-delete incidents with audit logging
+- **Log uploads** — Multipart file upload with validation, metadata storage, and paginated listing
+- **Dashboard metrics** — Aggregate counts for incidents and uploaded logs
+- **Frontend dashboard** — React 19 + TypeScript + Tailwind with routing, global loading, toasts, error boundary, and 404 page
+- **API documentation** — OpenAPI/Swagger at `/docs` with summaries, descriptions, tags, and schema examples
+- **Docker** — One-command startup with backend and frontend health checks
+
+---
+
+## Architecture overview
+
+Oz AI follows a layered architecture documented in `docs/02_ARCHITECTURE.md`:
+
+```text
+Presentation (React Dashboard)
+        │
+        ▼
+Backend (FastAPI · Services · Repositories)
+        │
+        ▼
+Persistence (SQLite · SQLAlchemy ORM)
+```
+
+Sprint 1 implements the backend and presentation layers. Agent orchestration, MCP tools, and authentication are planned for later sprints.
 
 ---
 
@@ -18,7 +46,7 @@ Sprint 1 establishes the application skeleton: FastAPI backend, React frontend, 
 
 ---
 
-## Installation
+## Local setup
 
 ### 1. Clone the repository
 
@@ -33,44 +61,9 @@ cd Kaggle
 cp .env.example .env
 ```
 
-Edit `.env` if you need to change ports or the database path. Defaults work for local development.
+Edit `.env` if you need to change ports, the database path, or upload limits. Defaults work for local development.
 
----
-
-## Run with Docker
-
-From the repository root:
-
-```bash
-docker compose up --build
-```
-
-Services:
-
-| Service  | URL |
-|----------|-----|
-| Backend  | http://localhost:8000 |
-| Frontend | http://localhost:5173 |
-| API docs | http://localhost:8000/docs |
-
-Verify the backend:
-
-```bash
-curl http://localhost:8000/
-curl http://localhost:8000/api/v1/health
-```
-
-Stop services:
-
-```bash
-docker compose down
-```
-
----
-
-## Run locally
-
-### Backend
+### 3. Start the backend
 
 ```bash
 cd backend
@@ -86,7 +79,7 @@ pip install -e ".[dev]"
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Frontend
+### 4. Start the frontend
 
 In a separate terminal:
 
@@ -96,46 +89,149 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:5173. The landing page displays backend health from http://localhost:8000/api/v1/health.
+Open http://localhost:5173.
+
+---
+
+## Docker setup
+
+From the repository root:
+
+```bash
+docker compose up --build
+```
+
+No manual configuration is required. Compose sets database, upload, and API URL defaults automatically.
+
+| Service  | URL |
+|----------|-----|
+| Backend  | http://localhost:8000 |
+| Frontend | http://localhost:5173 |
+| API docs | http://localhost:8000/docs |
+
+Verify the backend:
+
+```bash
+curl http://localhost:8000/api/v1/health
+```
+
+Stop services:
+
+```bash
+docker compose down
+```
+
+---
+
+## API documentation
+
+Interactive Swagger UI: **http://localhost:8000/docs**
+
+All endpoints return the standard envelope:
+
+```json
+{
+  "success": true,
+  "message": "Human-readable status",
+  "data": {}
+}
+```
+
+### Endpoints (13)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Application root |
+| GET | `/api/v1/health` | Health check |
+| GET | `/api/v1/dashboard/stats` | Dashboard metrics |
+| GET | `/api/v1/system/tables` | Database table listing |
+| POST | `/api/v1/incidents` | Create incident |
+| GET | `/api/v1/incidents` | List incidents |
+| GET | `/api/v1/incidents/{id}` | Get incident |
+| PUT | `/api/v1/incidents/{id}` | Update incident |
+| DELETE | `/api/v1/incidents/{id}` | Soft delete incident |
+| POST | `/api/v1/logs/upload` | Upload log file |
+| GET | `/api/v1/logs` | List log files |
+| GET | `/api/v1/logs/{id}` | Get log metadata |
+| DELETE | `/api/v1/logs/{id}` | Soft delete log file |
+
+---
+
+## Frontend pages (7)
+
+| Route | Page |
+|-------|------|
+| `/` | Dashboard |
+| `/incidents` | Incident list |
+| `/incidents/:id` | Incident detail |
+| `/logs` | Log upload and listing |
+| `/reports` | Reports (placeholder) |
+| `/settings` | Settings (placeholder) |
+| `*` | 404 not found |
 
 ---
 
 ## Folder structure
 
 ```text
-oz-ai/
+Kaggle/
 ├── backend/
 │   └── app/
 │       ├── api/          # HTTP route modules
-│       ├── core/         # Configuration and shared core
+│       ├── core/         # Config, logging, middleware, exceptions
 │       ├── db/           # Database session and engine
 │       ├── models/       # SQLAlchemy ORM models
-│       ├── schemas/      # Pydantic schemas
+│       ├── repositories/ # Data access layer
+│       ├── schemas/      # Pydantic request/response schemas
 │       ├── services/     # Business logic
 │       ├── utils/        # Shared utilities
 │       └── main.py       # FastAPI entry point
 ├── frontend/
 │   └── src/
-│       ├── components/   # Reusable UI components
-│       ├── pages/        # Route-level pages
+│       ├── components/   # Reusable UI (loading, toasts, tables)
+│       ├── context/      # Global app state
 │       ├── layouts/      # Layout wrappers
-│       ├── hooks/        # Custom React hooks
-│       ├── services/     # API client
-│       └── assets/       # Static assets
-├── agents/               # Agent definitions (future)
-├── mcp/                  # MCP tool servers (future)
-├── datasets/             # Synthetic datasets (future)
-├── evaluation/           # Evaluation harness (future)
+│       ├── pages/        # Route-level pages
+│       ├── services/     # API client and service modules
+│       └── utils/        # Formatting helpers
 ├── docker/               # Dockerfiles
-├── tests/                # Integration and E2E tests
-├── scripts/              # Utility scripts
-├── design/               # Architecture diagrams and wireframes
+├── storage/uploads/      # Local log file storage
+├── tests/                # Backend integration tests
 ├── docs/                 # Project documentation
-├── .github/              # GitHub templates and community files
-├── .cursor/              # Cursor AI rules
 ├── docker-compose.yml
 ├── .env.example
 └── README.md
+```
+
+---
+
+## Screenshots
+
+<!-- Add dashboard screenshot -->
+![Dashboard](docs/screenshots/dashboard.png)
+
+<!-- Add incidents list screenshot -->
+![Incidents](docs/screenshots/incidents.png)
+
+<!-- Add log upload screenshot -->
+![Log Upload](docs/screenshots/log-upload.png)
+
+---
+
+## Testing
+
+Backend tests (from `backend/`):
+
+```bash
+pip install -e ".[dev]"
+python -m pytest ../tests -v
+```
+
+Frontend build:
+
+```bash
+cd frontend
+npm run build
 ```
 
 ---

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { EmptyState } from "./ui";
 
 export interface Column<T> {
   key: string;
@@ -22,9 +23,9 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   if (data.length === 0) {
     return (
-      <p className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
-        {emptyMessage}
-      </p>
+      <div className="p-4">
+        <EmptyState title="No records" description={emptyMessage} />
+      </div>
     );
   }
 

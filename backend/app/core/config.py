@@ -38,8 +38,16 @@ settings = Settings()
 
 def get_upload_path() -> Path:
     """Return the absolute upload directory path, creating it if needed."""
-    backend_dir = Path(__file__).resolve().parents[2]
-    repo_root = backend_dir.parent
-    upload_path = (repo_root / settings.upload_dir).resolve()
+    configured = Path(settings.upload_dir)
+    if configured.is_absolute():
+        upload_path = configured
+    else:
+        app_root = Path(__file__).resolve().parents[2]
+        monorepo_root = app_root.parent
+        if (monorepo_root / "frontend").exists():
+            upload_path = monorepo_root / configured
+        else:
+            upload_path = app_root / configured
+
     upload_path.mkdir(parents=True, exist_ok=True)
-    return upload_path
+    return upload_path.resolve()
