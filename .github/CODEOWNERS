@@ -1,0 +1,63 @@
+# CODEOWNERS
+#
+# This file defines code ownership for the Oz AI repository.
+# Each pattern on the left matches a set of files. The GitHub usernames
+# or team names on the right are required reviewers for PRs that modify
+# matching files.
+#
+# Documentation: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Replace placeholder usernames with actual GitHub usernames before use.
+
+# === Global Default ===
+# All files require review from the engineering lead unless a more specific
+# rule below applies.
+*                               @oz-ai-engineering-lead
+
+# === Documentation ===
+# All documentation changes require review from the technical writer or lead.
+/docs/                          @oz-ai-engineering-lead
+/design/                        @oz-ai-engineering-lead
+README.md                       @oz-ai-engineering-lead
+.cursor/rules.md                @oz-ai-engineering-lead
+
+# === Architecture-Critical Files ===
+# These files define the project's architectural foundation.
+# Changes require the engineering lead's explicit approval.
+/docs/01_PROJECT_BRIEF.md       @oz-ai-engineering-lead
+/docs/02_ARCHITECTURE.md        @oz-ai-engineering-lead
+/docs/04_DECISIONS.md           @oz-ai-engineering-lead
+docker-compose.yml              @oz-ai-engineering-lead
+pyproject.toml                  @oz-ai-engineering-lead
+package.json                    @oz-ai-engineering-lead
+
+# === Agent Layer ===
+# All agent code and system prompts require lead review.
+/agents/                        @oz-ai-engineering-lead
+
+# === Guardian Agent ===
+# The Guardian Agent requires separate explicit review — changes here
+# affect the entire platform's safety posture.
+/agents/guardian/               @oz-ai-engineering-lead
+
+# === MCP Tool Layer ===
+# MCP tools are the agent-to-system interface. Changes require review.
+/mcp/                           @oz-ai-engineering-lead
+
+# === Backend ===
+/backend/                       @oz-ai-engineering-lead
+
+# === Frontend ===
+/frontend/                      @oz-ai-engineering-lead
+
+# === Evaluation ===
+# Evaluation scenarios and harness define the quality bar.
+/evaluation/                    @oz-ai-engineering-lead
+
+# === Security-Sensitive Files ===
+.env.example                    @oz-ai-engineering-lead
+/docker/                        @oz-ai-engineering-lead
+/.github/SECURITY.md            @oz-ai-engineering-lead
+
+# === GitHub Templates ===
+/.github/                       @oz-ai-engineering-lead
