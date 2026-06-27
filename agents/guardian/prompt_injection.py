@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import re
-
 DEFAULT_INJECTION_BLOCKLIST: tuple[str, ...] = (
     "ignore previous instructions",
     "reveal system prompt",

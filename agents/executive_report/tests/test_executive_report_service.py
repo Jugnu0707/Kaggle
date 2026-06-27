@@ -4,8 +4,6 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
-from google.genai import errors as genai_errors
-
 from agents.executive_report.models import ExecutiveReportInput
 from agents.executive_report.schemas import (
     AIExecutiveReportResponse,
@@ -16,6 +14,7 @@ from agents.executive_report.schemas import (
     RiskAssessmentContext,
 )
 from agents.executive_report.service import ExecutiveReportService
+from google.genai import errors as genai_errors
 
 
 @pytest.fixture

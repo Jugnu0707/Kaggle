@@ -22,7 +22,9 @@ class ThreatIntelligenceInput(BaseModel):
         },
     )
 
-    incident_id: uuid.UUID = Field(description="Incident to enrich with threat intelligence")
+    incident_id: uuid.UUID = Field(
+        description="Incident to enrich with threat intelligence"
+    )
 
 
 class IOC(BaseModel):

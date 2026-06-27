@@ -43,7 +43,9 @@ def _upload_log(client: TestClient, incident_id: str) -> None:
     response = client.post(
         "/api/v1/logs/upload",
         data={"incident_id": incident_id},
-        files={"file": ("powershell_execution.log", BytesIO(POWERSHELL_LOG), "text/plain")},
+        files={
+            "file": ("powershell_execution.log", BytesIO(POWERSHELL_LOG), "text/plain")
+        },
     )
     assert response.status_code == 201
 
@@ -57,9 +59,7 @@ def _run_investigation(client: TestClient, incident_id: str) -> str:
     return response.json()["data"]["execution_id"]
 
 
-def test_replay_generation_after_investigation(
-    client: TestClient, upload_dir
-) -> None:
+def test_replay_generation_after_investigation(client: TestClient, upload_dir) -> None:
     """Replay steps are persisted when an investigation completes."""
     incident_id = _create_incident(client)
     _upload_log(client, incident_id)

@@ -22,7 +22,9 @@ class EvidenceInput(BaseModel):
     )
 
     incident_id: uuid.UUID = Field(description="Incident associated with the evidence")
-    log_file_id: uuid.UUID = Field(description="Uploaded log file to collect evidence from")
+    log_file_id: uuid.UUID = Field(
+        description="Uploaded log file to collect evidence from"
+    )
 
 
 class FileMetadata(BaseModel):
@@ -64,7 +66,10 @@ class EvidencePackage(BaseModel):
                 "file_size": 2048,
                 "number_of_lines": 42,
                 "detected_log_type": "application_log",
-                "timestamp_range": {"start": "2026-06-26T10:00:00", "end": "2026-06-26T11:00:00"},
+                "timestamp_range": {
+                    "start": "2026-06-26T10:00:00",
+                    "end": "2026-06-26T11:00:00",
+                },
                 "sample_entries": ["2026-06-26 ERROR suspicious process started"],
                 "collection_timestamp": "2026-06-26T12:00:00Z",
                 "parse_notes": None,

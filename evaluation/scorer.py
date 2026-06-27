@@ -45,7 +45,9 @@ def score_performance(metrics: AgentMetrics) -> int:
         return 100
     if mean_ms >= PERFORMANCE_MAX_MS:
         return 0
-    ratio = (PERFORMANCE_MAX_MS - mean_ms) / (PERFORMANCE_MAX_MS - PERFORMANCE_TARGET_MS)
+    ratio = (PERFORMANCE_MAX_MS - mean_ms) / (
+        PERFORMANCE_MAX_MS - PERFORMANCE_TARGET_MS
+    )
     return _clamp_score(ratio * 100)
 
 
@@ -64,9 +66,7 @@ def calculate_health_score(metrics: AgentMetrics) -> int:
         "performance": score_performance(metrics),
         "accuracy": score_accuracy(metrics),
     }
-    weighted = sum(
-        components[key] * HEALTH_WEIGHTS[key] for key in HEALTH_WEIGHTS
-    )
+    weighted = sum(components[key] * HEALTH_WEIGHTS[key] for key in HEALTH_WEIGHTS)
     return _clamp_score(weighted)
 
 

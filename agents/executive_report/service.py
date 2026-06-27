@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import uuid
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from pathlib import Path
 
 from google.genai import errors as genai_errors
@@ -69,10 +70,14 @@ class ExecutiveReportService:
             self.db,
         )
         if incidents_result.success:
-            logger.info("MCP list_incidents tool executed via runtime for executive report")
+            logger.info(
+                "MCP list_incidents tool executed via runtime for executive report"
+            )
 
         context = self._gather_context(request.incident_id)
-        logger.info("Executive report generation started: incident_id=%s", request.incident_id)
+        logger.info(
+            "Executive report generation started: incident_id=%s", request.incident_id
+        )
 
         ai_result = self._try_ai_report(context)
         if ai_result is not None:
@@ -144,7 +149,9 @@ class ExecutiveReportService:
                 reasoning=risk_record.reasoning,
             )
         else:
-            risk_result = self.risk_service.assess(RiskAssessmentInput(incident_id=incident_id))
+            risk_result = self.risk_service.assess(
+                RiskAssessmentInput(incident_id=incident_id)
+            )
             risk_context = RiskAssessmentContext(
                 overall_risk=risk_result.overall_risk,
                 risk_score=risk_result.risk_score,
@@ -155,7 +162,9 @@ class ExecutiveReportService:
                 reasoning=risk_result.reasoning,
             )
 
-        response_record = self.response_repository.get_latest_by_incident_id(incident_id)
+        response_record = self.response_repository.get_latest_by_incident_id(
+            incident_id
+        )
         response_context: ResponsePlanContext | None = None
         if response_record is not None:
             response_context = ResponsePlanContext(
@@ -188,7 +197,9 @@ class ExecutiveReportService:
                 status=incident.status.value,
                 source=incident.source,
                 confidence_score=incident.confidence_score,
-                created_at=incident.created_at.isoformat() if incident.created_at else None,
+                created_at=(
+                    incident.created_at.isoformat() if incident.created_at else None
+                ),
             ),
             evidence_summaries=evidence_summaries,
             mitre_techniques=mitre_techniques,
@@ -199,14 +210,18 @@ class ExecutiveReportService:
             suspicious_indicator_count=suspicious_indicator_count,
         )
 
-    def _try_ai_report(self, context: ExecutiveReportContext) -> ExecutiveReportResult | None:
+    def _try_ai_report(
+        self, context: ExecutiveReportContext
+    ) -> ExecutiveReportResult | None:
         api_key = get_ai_runtime().provider.get_api_key()
         model = get_ai_runtime().provider.get_model()
         if not api_key:
             logger.warning("AI failure reason: GOOGLE_API_KEY is not configured")
             return None
 
-        logger.info("AI request started: model=%s incident_id=%s", model, context.incident.id)
+        logger.info(
+            "AI request started: model=%s incident_id=%s", model, context.incident.id
+        )
         try:
             with ThreadPoolExecutor(max_workers=1) as executor:
                 future = executor.submit(self._call_gemini, api_key, model, context)

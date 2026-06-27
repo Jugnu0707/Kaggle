@@ -89,5 +89,8 @@ def test_fallback_uses_business_language() -> None:
     """Fallback report avoids raw technical log content."""
     result = generate_executive_report_fallback(_context())
 
-    assert "ransomware" in result.executive_summary.lower() or "critical" in result.executive_summary.lower()
+    assert (
+        "ransomware" in result.executive_summary.lower()
+        or "critical" in result.executive_summary.lower()
+    )
     assert "Attack activity aligns with" in result.markdown

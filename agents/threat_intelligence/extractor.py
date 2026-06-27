@@ -1,8 +1,8 @@
 """Backward-compatible re-exports for IOC extraction."""
 
 from agents.threat_intelligence.ioc_extractor import (
-    IOCExtractor,
     IOC_TYPE_TO_BREAKDOWN,
+    IOCExtractor,
     detect_suspicious_indicators,
     is_private_ipv4,
 )

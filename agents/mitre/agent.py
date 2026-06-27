@@ -63,5 +63,7 @@ class MitreMappingAgent:
     def is_loaded(self) -> bool:
         return self._loaded
 
-    def map_incident(self, request: MitreMappingInput, db: Session) -> MitreMappingResult:
+    def map_incident(
+        self, request: MitreMappingInput, db: Session
+    ) -> MitreMappingResult:
         return MitreMappingService(db).map_incident(request)

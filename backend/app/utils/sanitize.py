@@ -39,7 +39,7 @@ def sanitize_value(value: Any) -> Any:
         return None
     if isinstance(value, str):
         return _redact_string(value)
-    if isinstance(value, (int, float, bool)):
+    if isinstance(value, int | float | bool):
         return value
     if isinstance(value, dict):
         blocked_keys = {

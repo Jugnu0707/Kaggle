@@ -18,8 +18,12 @@ class ListIncidentsInput(BaseModel):
 
     page: int = Field(default=1, ge=1, description="Page number")
     page_size: int = Field(default=10, ge=1, le=100, description="Items per page")
-    severity: Severity | None = Field(default=None, description="Optional severity filter")
-    status: IncidentStatus | None = Field(default=None, description="Optional status filter")
+    severity: Severity | None = Field(
+        default=None, description="Optional severity filter"
+    )
+    status: IncidentStatus | None = Field(
+        default=None, description="Optional status filter"
+    )
     search: str | None = Field(default=None, description="Optional title search term")
 
 
@@ -49,7 +53,9 @@ class IncidentDetailsOutput(BaseModel):
     input_model=ListIncidentsInput,
     output_model=ListIncidentsOutput,
 )
-def list_incidents_tool(input_data: ListIncidentsInput, db: Session) -> ListIncidentsOutput:
+def list_incidents_tool(
+    input_data: ListIncidentsInput, db: Session
+) -> ListIncidentsOutput:
     """Return all incidents using the incident service layer."""
     incidents = IncidentService(db).list_incidents(
         page=input_data.page,

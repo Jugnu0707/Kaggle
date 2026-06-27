@@ -1,6 +1,6 @@
 """AI runtime and MCP integration tests."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -47,7 +47,13 @@ def test_mcp_tools_executed_via_runtime(client: TestClient) -> None:
 
     upload_response = client.post(
         "/api/v1/logs/upload",
-        files={"file": ("runtime-test.log", b"2024-01-01 10:00:00 login failed", "text/plain")},
+        files={
+            "file": (
+                "runtime-test.log",
+                b"2024-01-01 10:00:00 login failed",
+                "text/plain",
+            )
+        },
         data={"incident_id": incident_id},
     )
     log_id = upload_response.json()["data"]["file_id"]

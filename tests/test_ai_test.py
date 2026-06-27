@@ -3,8 +3,8 @@
 from concurrent.futures import TimeoutError as FuturesTimeoutError
 from unittest.mock import MagicMock, patch
 
-from google.genai import errors as genai_errors
 from fastapi.testclient import TestClient
+from google.genai import errors as genai_errors
 
 from app.services.ai_test_service import AITestService
 
@@ -26,7 +26,9 @@ def test_ai_test_success(client: TestClient) -> None:
     with patch("app.services.ai_test_service.ai_settings") as mock_settings:
         mock_settings.google_api_key = "test-key"
         mock_settings.google_model = "gemini-2.5-pro"
-        with patch.object(AITestService, "_generate", return_value="READY") as mock_generate:
+        with patch.object(
+            AITestService, "_generate", return_value="READY"
+        ) as mock_generate:
             response = client.get("/api/v1/ai/test")
 
     assert response.status_code == 200

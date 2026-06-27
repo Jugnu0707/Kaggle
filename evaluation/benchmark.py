@@ -13,7 +13,9 @@ from agents.evidence.models import EvidenceInput
 from agents.evidence.service import EvidenceCollectionService
 from agents.executive_report.fallback import generate_executive_report_fallback
 from agents.executive_report.schemas import ExecutiveReportContext, IncidentContext
-from agents.executive_report.schemas import RiskAssessmentContext as ExecutiveRiskContext
+from agents.executive_report.schemas import (
+    RiskAssessmentContext as ExecutiveRiskContext,
+)
 from agents.guardian.schemas import GuardianAgentName, GuardianValidateInput
 from agents.guardian.validator import GuardianValidator
 from agents.mitre.mappings import map_evidence_text
@@ -53,7 +55,9 @@ def _measure(callable_obj, *args, **kwargs) -> tuple[object | None, int, bool]:
         return None, duration_ms, False
 
 
-def _create_incident(db: Session, title: str = "Evaluation benchmark incident") -> uuid.UUID:
+def _create_incident(
+    db: Session, title: str = "Evaluation benchmark incident"
+) -> uuid.UUID:
     incident = Incident(
         title=title,
         description="Synthetic incident for evaluation benchmarks",
@@ -112,7 +116,9 @@ def benchmark_coordinator(db: Session) -> list[ExecutionMetric]:
         return plan
 
     result, duration_ms, success = _measure(run)
-    output_size = len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    output_size = (
+        len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    )
     return [
         ExecutionMetric(
             agent_name="Coordinator Agent",
@@ -133,7 +139,9 @@ def benchmark_evidence(db: Session) -> list[ExecutionMetric]:
 
     for scenario in EVIDENCE_SCENARIOS:
         incident_id = _create_incident(db, f"Evidence benchmark: {scenario.title}")
-        log_id = _create_log_file(db, incident_id, scenario.log_content, f"{scenario.title}.log")
+        log_id = _create_log_file(
+            db, incident_id, scenario.log_content, f"{scenario.title}.log"
+        )
 
         def run() -> object:
             return service.collect(
@@ -141,7 +149,9 @@ def benchmark_evidence(db: Session) -> list[ExecutionMetric]:
             )
 
         result, duration_ms, success = _measure(run)
-        output_size = len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+        output_size = (
+            len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+        )
         metrics.append(
             ExecutionMetric(
                 agent_name="Evidence Agent",
@@ -162,6 +172,7 @@ def benchmark_threat_intelligence(db: Session) -> list[ExecutionMetric]:
     extractor = IOCExtractor()
 
     for scenario in THREAT_INTEL_SCENARIOS:
+
         def run() -> object:
             iocs = extractor.extract(scenario.text)
             return [
@@ -173,7 +184,9 @@ def benchmark_threat_intelligence(db: Session) -> list[ExecutionMetric]:
         if result:
             values = [item.confidence for item in result]
             confidence = sum(values) / len(values) if values else 70.0
-        output_size = len(json.dumps([item.model_dump() for item in result])) if result else 0
+        output_size = (
+            len(json.dumps([item.model_dump() for item in result])) if result else 0
+        )
         metrics.append(
             ExecutionMetric(
                 agent_name="Threat Intelligence Agent",
@@ -193,6 +206,7 @@ def benchmark_mitre(db: Session) -> list[ExecutionMetric]:
     metrics: list[ExecutionMetric] = []
 
     for scenario in MITRE_SCENARIOS:
+
         def run() -> object:
             return map_evidence_text(scenario.text)
 
@@ -201,7 +215,9 @@ def benchmark_mitre(db: Session) -> list[ExecutionMetric]:
         if result:
             values = [item.confidence for item in result]
             confidence = sum(values) / len(values) if values else 0.0
-        output_size = len(json.dumps([item.model_dump() for item in result])) if result else 0
+        output_size = (
+            len(json.dumps([item.model_dump() for item in result])) if result else 0
+        )
         metrics.append(
             ExecutionMetric(
                 agent_name="MITRE Mapping Agent",
@@ -241,7 +257,9 @@ def benchmark_risk(db: Session) -> list[ExecutionMetric]:
             return assess_risk_fallback(context)
 
     result, duration_ms, success = _measure(run)
-    output_size = len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    output_size = (
+        len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    )
     return [
         ExecutionMetric(
             agent_name="Risk Assessment Agent",
@@ -286,7 +304,9 @@ def benchmark_response(db: Session) -> list[ExecutionMetric]:
             return plan_response_fallback(context)
 
     result, duration_ms, success = _measure(run)
-    output_size = len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    output_size = (
+        len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    )
     return [
         ExecutionMetric(
             agent_name="Response Planning Agent",
@@ -332,7 +352,9 @@ def benchmark_executive_report(db: Session) -> list[ExecutionMetric]:
             return generate_executive_report_fallback(context)
 
     result, duration_ms, success = _measure(run)
-    output_size = len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    output_size = (
+        len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    )
     return [
         ExecutionMetric(
             agent_name="Executive Report Agent",
@@ -364,7 +386,9 @@ def benchmark_guardian(db: Session) -> list[ExecutionMetric]:
             )
 
         result, duration_ms, success = _measure(run)
-        output_size = len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+        output_size = (
+            len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+        )
         metrics.append(
             ExecutionMetric(
                 agent_name="Guardian Agent",
@@ -394,7 +418,9 @@ def benchmark_timeline(db: Session) -> list[ExecutionMetric]:
         return engine.build(incident_id)
 
     result, duration_ms, success = _measure(run)
-    output_size = len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    output_size = (
+        len(json.dumps(result.model_dump(mode="json"))) if result is not None else 0
+    )
     return [
         ExecutionMetric(
             agent_name="Timeline Engine",

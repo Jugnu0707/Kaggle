@@ -49,6 +49,7 @@ target-version = ["py312"]
 profile = "black"
 line_length = 100
 known_first_party = ["agents", "app", "mcp", "tests"]
+src_paths = ["app", "../agents", "../mcp", "../tests", "../evaluation"]
 
 [tool.ruff]
 line-length = 100

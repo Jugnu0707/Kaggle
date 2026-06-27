@@ -2,7 +2,6 @@
 
 import uuid
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -24,7 +23,10 @@ VALID_RISK_RESPONSE = {
 
 def test_guardian_agent_initializes_on_startup() -> None:
     """Guardian Agent is loaded with ADK configuration."""
-    from app.core.guardian_runtime import get_guardian_agent, initialize_guardian_runtime
+    from app.core.guardian_runtime import (
+        get_guardian_agent,
+        initialize_guardian_runtime,
+    )
 
     initialize_guardian_runtime()
     agent = get_guardian_agent()

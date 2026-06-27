@@ -11,7 +11,10 @@ SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("AWS Access Key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
     ("Google API Key", re.compile(r"\bAIza[0-9A-Za-z\-_]{35}\b")),
     ("Bearer Token", re.compile(r"\bBearer\s+[A-Za-z0-9\-._~+/]+=*\b", re.IGNORECASE)),
-    ("JWT Token", re.compile(r"\beyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\b")),
+    (
+        "JWT Token",
+        re.compile(r"\beyJ[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\b"),
+    ),
     ("Azure Secret", re.compile(r"\b[a-zA-Z0-9+/]{86}==\b")),
     (
         "Private Key",

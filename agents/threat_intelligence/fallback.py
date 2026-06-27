@@ -7,7 +7,9 @@ from agents.threat_intelligence.reputation_engine import assess_reputation
 from agents.threat_intelligence.schemas import ThreatIntelligenceSource
 
 
-def enrich_ioc_fallback(ioc: IOC, *, context_text: str = "") -> ThreatIntelligenceFinding:
+def enrich_ioc_fallback(
+    ioc: IOC, *, context_text: str = ""
+) -> ThreatIntelligenceFinding:
     """Enrich a single IOC using offline reputation rules only."""
     assessment = assess_reputation(ioc, context_text=context_text)
     analyst_notes = (

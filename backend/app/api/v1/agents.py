@@ -9,10 +9,7 @@ from app.schemas.executive_report_agent import (
     ExecutiveReportRequest,
     ExecutiveReportResponse,
 )
-from app.schemas.guardian_agent import (
-    GuardianValidateRequest,
-    GuardianValidateResponse,
-)
+from app.schemas.guardian_agent import GuardianValidateRequest, GuardianValidateResponse
 from app.schemas.mitre_agent import MitreMappingRequest, MitreMappingResponse
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
 from app.schemas.response import APIResponse

@@ -33,7 +33,6 @@ def _create_incident(db_session: Session) -> Incident:
 def test_timeline_orders_events_chronologically(db_session: Session) -> None:
     """Timeline events are sorted by timestamp."""
     incident = _create_incident(db_session)
-    base = datetime(2026, 6, 24, 8, 15, 0, tzinfo=UTC)
 
     db_session.add(
         Evidence(

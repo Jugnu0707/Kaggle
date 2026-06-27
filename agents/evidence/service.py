@@ -62,7 +62,9 @@ class EvidenceCollectionService:
             self.db,
         )
         if logs_result.success:
-            logger.info("MCP list_logs tool executed via runtime for evidence collection")
+            logger.info(
+                "MCP list_logs tool executed via runtime for evidence collection"
+            )
 
         incident = self.incident_repository.get_by_id(request.incident_id)
         if incident is None:
@@ -72,7 +74,10 @@ class EvidenceCollectionService:
         if log_file is None:
             raise NotFoundException("Log file not found")
 
-        if log_file.incident_id is not None and log_file.incident_id != request.incident_id:
+        if (
+            log_file.incident_id is not None
+            and log_file.incident_id != request.incident_id
+        ):
             raise AppException(
                 "Log file is not linked to the specified incident",
                 status_code=400,
@@ -91,7 +96,9 @@ class EvidenceCollectionService:
             content = file_path.read_text(encoding="utf-8", errors="replace")
             self._validate_readable_content(content, extension)
             logger.info("Evidence validation complete: extension=%s", extension)
-            package = self._build_readable_package(request, log_file, content, extension)
+            package = self._build_readable_package(
+                request, log_file, content, extension
+            )
         else:
             raise AppException(
                 f"Unsupported file extension for evidence collection: {extension}",
@@ -99,7 +106,9 @@ class EvidenceCollectionService:
             )
 
         summary = self._build_summary(package)
-        logger.info("Evidence package generated for log_file_id=%s", request.log_file_id)
+        logger.info(
+            "Evidence package generated for log_file_id=%s", request.log_file_id
+        )
         logger.info("Evidence summary generated: file_type=%s", summary.file_type)
 
         return EvidenceResult(
@@ -206,7 +215,9 @@ class EvidenceCollectionService:
     def _parse_text_lines(self, content: str, extension: str) -> tuple[list[str], str]:
         """Parse line-based text or log files."""
         entries = [line for line in content.splitlines() if line.strip()]
-        detected_type = "text" if extension == ".txt" else self._detect_log_type(entries)
+        detected_type = (
+            "text" if extension == ".txt" else self._detect_log_type(entries)
+        )
         return entries, detected_type
 
     def _detect_log_type(self, entries: list[str]) -> str:

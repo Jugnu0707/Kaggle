@@ -40,7 +40,9 @@ def count_openapi_operations() -> dict[str, int]:
         text=True,
         check=True,
     )
-    lines = [line for line in result.stdout.splitlines() if line.strip().startswith("{")]
+    lines = [
+        line for line in result.stdout.splitlines() if line.strip().startswith("{")
+    ]
     return json.loads(lines[-1])
 
 
@@ -77,7 +79,9 @@ def count_mcp_tools() -> int:
         text=True,
         check=True,
     )
-    lines = [line.strip() for line in result.stdout.splitlines() if line.strip().isdigit()]
+    lines = [
+        line.strip() for line in result.stdout.splitlines() if line.strip().isdigit()
+    ]
     return int(lines[-1])
 
 
@@ -111,7 +115,9 @@ def count_lines_of_code() -> int:
         for path in base.rglob("*"):
             if path.suffix not in CODE_EXTENSIONS:
                 continue
-            if any(part in path.parts for part in (".venv", "node_modules", "__pycache__")):
+            if any(
+                part in path.parts for part in (".venv", "node_modules", "__pycache__")
+            ):
                 continue
             try:
                 total += sum(1 for _ in path.open(encoding="utf-8", errors="ignore"))

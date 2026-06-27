@@ -5,15 +5,15 @@ from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 import pytest
+from agents.threat_intelligence.schemas import (
+    AIEnrichedFinding,
+    AIThreatIntelligenceResponse,
+)
 from fastapi.testclient import TestClient
 from google.genai import errors as genai_errors
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from agents.threat_intelligence.schemas import (
-    AIEnrichedFinding,
-    AIThreatIntelligenceResponse,
-)
 from app.models.agent_execution import AgentExecution
 from app.models.enums import AgentExecutionStatus
 from app.models.threat_intelligence_finding import ThreatIntelligenceFinding
@@ -223,7 +223,9 @@ def test_orchestrate_invokes_threat_intelligence_before_mitre(
 ) -> None:
     """Coordinator orchestration invokes Threat Intelligence before MITRE Mapping."""
     incident_id = _create_incident(client)
-    log_id = _upload_log(client, "powershell_execution.log", POWERSHELL_LOG, incident_id)
+    log_id = _upload_log(
+        client, "powershell_execution.log", POWERSHELL_LOG, incident_id
+    )
 
     response = client.post(
         "/api/v1/agents/orchestrate",

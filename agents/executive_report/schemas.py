@@ -5,10 +5,11 @@ from __future__ import annotations
 import uuid
 from enum import Enum
 
+from pydantic import BaseModel, ConfigDict, Field
+
 from agents.evidence.models import EvidenceSummary
 from agents.mitre.models import MappedTechnique
 from agents.threat_intelligence.models import ThreatIntelligenceReport
-from pydantic import BaseModel, ConfigDict, Field
 
 
 class ExecutiveReportSource(str, Enum):
@@ -60,7 +61,9 @@ class ExecutiveReportContext(BaseModel):
     incident: IncidentContext
     evidence_summaries: list[EvidenceSummary] = Field(default_factory=list)
     mitre_techniques: list[MappedTechnique] = Field(default_factory=list)
-    threat_intelligence_reports: list[ThreatIntelligenceReport] = Field(default_factory=list)
+    threat_intelligence_reports: list[ThreatIntelligenceReport] = Field(
+        default_factory=list
+    )
     risk_assessment: RiskAssessmentContext | None = None
     response_plan: ResponsePlanContext | None = None
     total_iocs: int = 0

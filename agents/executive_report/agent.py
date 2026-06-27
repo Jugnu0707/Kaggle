@@ -64,5 +64,7 @@ class ExecutiveReportAgent:
     def is_loaded(self) -> bool:
         return self._loaded
 
-    def generate(self, request: ExecutiveReportInput, db: Session) -> ExecutiveReportResult:
+    def generate(
+        self, request: ExecutiveReportInput, db: Session
+    ) -> ExecutiveReportResult:
         return ExecutiveReportService(db).generate(request)

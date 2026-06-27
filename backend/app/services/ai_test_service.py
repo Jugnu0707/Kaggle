@@ -6,7 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FuturesTimeoutError
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from google import genai
 from google.genai import errors as genai_errors
@@ -55,7 +55,7 @@ class AITestService:
             )
             return AITestResult(connected=False, reason="Invalid API key")
 
-        start_dt = datetime.now(timezone.utc)
+        start_dt = datetime.now(UTC)
         start_perf = time.perf_counter()
         logger.info(
             "AI connectivity test started: model=%s start_time=%s",
@@ -68,7 +68,7 @@ class AITestService:
                 future = executor.submit(self._generate, api_key, model)
                 response_text = future.result(timeout=AI_TEST_TIMEOUT_SECONDS)
         except FuturesTimeoutError:
-            end_dt = datetime.now(timezone.utc)
+            end_dt = datetime.now(UTC)
             latency_ms = int((time.perf_counter() - start_perf) * 1000)
             logger.warning(
                 "AI connectivity test failed: model=%s start_time=%s end_time=%s "
@@ -80,7 +80,7 @@ class AITestService:
             )
             return AITestResult(connected=False, reason="Timeout")
         except genai_errors.ClientError as exc:
-            end_dt = datetime.now(timezone.utc)
+            end_dt = datetime.now(UTC)
             latency_ms = int((time.perf_counter() - start_perf) * 1000)
             reason = self._client_error_reason(exc)
             logger.warning(
@@ -94,7 +94,7 @@ class AITestService:
             )
             return AITestResult(connected=False, reason=reason)
         except (genai_errors.ServerError, Exception) as exc:
-            end_dt = datetime.now(timezone.utc)
+            end_dt = datetime.now(UTC)
             latency_ms = int((time.perf_counter() - start_perf) * 1000)
             reason = self._generic_error_reason(exc)
             logger.warning(
@@ -109,7 +109,7 @@ class AITestService:
             )
             return AITestResult(connected=False, reason=reason)
 
-        end_dt = datetime.now(timezone.utc)
+        end_dt = datetime.now(UTC)
         latency_ms = int((time.perf_counter() - start_perf) * 1000)
         logger.info(
             "AI connectivity test completed: model=%s start_time=%s end_time=%s "

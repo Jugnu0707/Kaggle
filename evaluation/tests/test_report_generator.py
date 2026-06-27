@@ -3,7 +3,11 @@
 from datetime import UTC, datetime
 
 from evaluation.metrics import AgentMetrics, EvaluationSummary, ExecutionMetric
-from evaluation.report_generator import build_report_payload, generate_json_report, generate_markdown_report
+from evaluation.report_generator import (
+    build_report_payload,
+    generate_json_report,
+    generate_markdown_report,
+)
 
 
 def test_build_report_payload_structure() -> None:

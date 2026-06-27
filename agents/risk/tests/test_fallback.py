@@ -5,7 +5,11 @@ from uuid import uuid4
 from agents.evidence.models import EvidenceSummary
 from agents.mitre.models import MappedTechnique
 from agents.risk.fallback import assess_risk_fallback
-from agents.risk.schemas import IncidentContext, RiskAssessmentContext, RiskAssessmentSource
+from agents.risk.schemas import (
+    IncidentContext,
+    RiskAssessmentContext,
+    RiskAssessmentSource,
+)
 
 
 def _context(

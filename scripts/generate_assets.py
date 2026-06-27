@@ -24,11 +24,21 @@ AMBER = (251, 191, 36)
 RED = (248, 113, 113)
 
 
-def _font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+def _font(
+    size: int, bold: bool = False
+) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
     candidates = [
-        "/System/Library/Fonts/Supplemental/Arial Bold.ttf" if bold else "/System/Library/Fonts/Supplemental/Arial.ttf",
+        (
+            "/System/Library/Fonts/Supplemental/Arial Bold.ttf"
+            if bold
+            else "/System/Library/Fonts/Supplemental/Arial.ttf"
+        ),
         "/Library/Fonts/Arial Bold.ttf" if bold else "/Library/Fonts/Arial.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        (
+            "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+            if bold
+            else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        ),
     ]
     for path in candidates:
         if Path(path).exists():
@@ -62,7 +72,9 @@ def _draw_sidebar(draw: ImageDraw.ImageDraw, active: str) -> None:
         y += 36
 
 
-def _panel(draw: ImageDraw.ImageDraw, x: int, y: int, w: int, h: int, title: str) -> None:
+def _panel(
+    draw: ImageDraw.ImageDraw, x: int, y: int, w: int, h: int, title: str
+) -> None:
     draw.rounded_rectangle((x, y, x + w, y + h), radius=12, fill=PANEL, outline=BORDER)
     draw.text((x + 16, y + 14), title, font=_font(14, True), fill=TEXT)
 
@@ -89,7 +101,9 @@ def generate_architecture() -> None:
     ]
 
     for x, y, w, h, label, color in boxes:
-        draw.rounded_rectangle((x, y, x + w, y + h), radius=10, fill=PANEL, outline=color, width=2)
+        draw.rounded_rectangle(
+            (x, y, x + w, y + h), radius=10, fill=PANEL, outline=color, width=2
+        )
         bbox = draw.textbbox((0, 0), label, font=_font(14, True))
         tw = bbox[2] - bbox[0]
         draw.text((x + (w - tw) / 2, y + 18), label, font=_font(14, True), fill=TEXT)
@@ -100,12 +114,16 @@ def generate_architecture() -> None:
         draw.polygon([(600, y2), (594, y2 - 8), (606, y2 - 8)], fill=BORDER)
 
     # Side labels
-    draw.rounded_rectangle((40, 250, 240, 370), radius=10, fill=PANEL, outline=ACCENT, width=2)
+    draw.rounded_rectangle(
+        (40, 250, 240, 370), radius=10, fill=PANEL, outline=ACCENT, width=2
+    )
     draw.text((58, 275), "Google ADK", font=_font(14, True), fill=ACCENT)
     draw.text((58, 300), "Runtime + Sessions", font=_font(12), fill=MUTED)
     draw.text((58, 325), "Agent Registry", font=_font(12), fill=MUTED)
 
-    draw.rounded_rectangle((960, 250, 1160, 370), radius=10, fill=PANEL, outline=ACCENT, width=2)
+    draw.rounded_rectangle(
+        (960, 250, 1160, 370), radius=10, fill=PANEL, outline=ACCENT, width=2
+    )
     draw.text((978, 275), "MCP Runtime", font=_font(14, True), fill=ACCENT)
     draw.text((978, 300), "5 operational tools", font=_font(12), fill=MUTED)
     draw.text((978, 325), "health · incidents · logs", font=_font(12), fill=MUTED)
@@ -113,7 +131,12 @@ def generate_architecture() -> None:
     draw.line((240, 310, 400, 280), fill=ACCENT, width=2)
     draw.line((960, 310, 820, 280), fill=ACCENT, width=2)
 
-    draw.text((40, 760), "Investigation flow: Coordinator → Agents (with Guardian between stages) → Timeline → Evaluation", font=_font(13), fill=MUTED)
+    draw.text(
+        (40, 760),
+        "Investigation flow: Coordinator → Agents (with Guardian between stages) → Timeline → Evaluation",
+        font=_font(13),
+        fill=MUTED,
+    )
 
     output = DOCS / "architecture.png"
     img.save(output)
@@ -132,7 +155,9 @@ def _severity_color(severity: str) -> tuple[int, int, int]:
 def screenshot_dashboard() -> None:
     img = Image.new("RGB", (WIDTH, HEIGHT), BG)
     draw = ImageDraw.Draw(img)
-    _draw_header(draw, "Security Operations Dashboard", "10 incidents · 5 investigations")
+    _draw_header(
+        draw, "Security Operations Dashboard", "10 incidents · 5 investigations"
+    )
     _draw_sidebar(draw, "Dashboard")
 
     cards = [
@@ -171,7 +196,9 @@ def screenshot_dashboard() -> None:
     img.save(SCREENSHOTS / "dashboard.png")
 
 
-def screenshot_incident_detail(tab: str, filename: str, content_lines: list[str]) -> None:
+def screenshot_incident_detail(
+    tab: str, filename: str, content_lines: list[str]
+) -> None:
     img = Image.new("RGB", (WIDTH, HEIGHT), BG)
     draw = ImageDraw.Draw(img)
     _draw_header(draw, "Suspicious PowerShell Execution", "Incident Details")
@@ -361,7 +388,9 @@ def generate_screenshots() -> None:
     y = 140
     for name, done, color in stages:
         marker = "✓" if done else "…"
-        draw.text((268, y), f"{marker}  {name}", font=_font(15), fill=color if done else MUTED)
+        draw.text(
+            (268, y), f"{marker}  {name}", font=_font(15), fill=color if done else MUTED
+        )
         y += 36
 
     img.save(SCREENSHOTS / "investigation-runner.png")

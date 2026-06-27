@@ -9,8 +9,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.investigation_run import InvestigationRun
 from app.models.enums import InvestigationRunStatus
+from app.models.investigation_run import InvestigationRun
 
 CREATE_PAYLOAD = {
     "title": "Suspicious PowerShell Execution",

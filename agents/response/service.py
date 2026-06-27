@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import uuid
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from pathlib import Path
 
 from google.genai import errors as genai_errors
@@ -59,7 +60,9 @@ class ResponsePlanningService:
 
         ai_result = self._try_ai_plan(context)
         if ai_result is not None:
-            logger.info("Response generated: source=AI incident_id=%s", request.incident_id)
+            logger.info(
+                "Response generated: source=AI incident_id=%s", request.incident_id
+            )
             return ai_result
 
         logger.warning("Fallback activated: incident_id=%s", request.incident_id)
@@ -123,7 +126,9 @@ class ResponsePlanningService:
                 reasoning=risk_record.reasoning,
             )
         else:
-            risk_result = self.risk_service.assess(RiskAssessmentInput(incident_id=incident_id))
+            risk_result = self.risk_service.assess(
+                RiskAssessmentInput(incident_id=incident_id)
+            )
             risk_context = RiskAssessmentContext(
                 overall_risk=risk_result.overall_risk,
                 risk_score=risk_result.risk_score,
@@ -150,20 +155,27 @@ class ResponsePlanningService:
             suspicious_indicators=sorted(set(suspicious_indicators)),
         )
 
-    def _try_ai_plan(self, context: ResponsePlanningContext) -> ResponsePlanResult | None:
+    def _try_ai_plan(
+        self, context: ResponsePlanningContext
+    ) -> ResponsePlanResult | None:
         api_key = get_ai_runtime().provider.get_api_key()
         model = get_ai_runtime().provider.get_model()
         if not api_key:
             logger.warning("AI failure reason: GOOGLE_API_KEY is not configured")
             return None
 
-        logger.info("AI request started: model=%s incident_id=%s", model, context.incident.id)
+        logger.info(
+            "AI request started: model=%s incident_id=%s", model, context.incident.id
+        )
         try:
             with ThreadPoolExecutor(max_workers=1) as executor:
                 future = executor.submit(self._call_gemini, api_key, model, context)
                 response = future.result(timeout=AI_REQUEST_TIMEOUT_SECONDS)
         except FuturesTimeoutError:
-            logger.warning("AI failure reason: request timed out after %ss", AI_REQUEST_TIMEOUT_SECONDS)
+            logger.warning(
+                "AI failure reason: request timed out after %ss",
+                AI_REQUEST_TIMEOUT_SECONDS,
+            )
             return None
         except genai_errors.ClientError as exc:
             logger.warning("AI failure reason: %s", exc)
@@ -178,7 +190,11 @@ class ResponsePlanningService:
         if response is None:
             return None
 
-        logger.info("AI response received: incident_id=%s priority=%s", context.incident.id, response.priority)
+        logger.info(
+            "AI response received: incident_id=%s priority=%s",
+            context.incident.id,
+            response.priority,
+        )
         return ResponsePlanResult(
             source=ResponsePlanSource.AI,
             priority=response.priority,

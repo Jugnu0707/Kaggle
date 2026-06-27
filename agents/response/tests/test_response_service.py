@@ -1,20 +1,23 @@
 """Unit tests for ResponsePlanningService AI and fallback behavior."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
-from google.genai import errors as genai_errors
-
 from agents.conftest import build_mock_ai_runtime
 from agents.response.models import ResponsePlanInput
 from agents.response.schemas import AIResponsePlanResponse, ResponsePlanSource
 from agents.response.service import ResponsePlanningService
+from google.genai import errors as genai_errors
 
 
 @pytest.fixture
 def mock_context():
-    from agents.response.schemas import IncidentContext, ResponsePlanningContext, RiskAssessmentContext
+    from agents.response.schemas import (
+        IncidentContext,
+        ResponsePlanningContext,
+        RiskAssessmentContext,
+    )
 
     return ResponsePlanningContext(
         incident=IncidentContext(
@@ -36,7 +39,9 @@ def mock_context():
     )
 
 
-def test_ai_success_returns_ai_source(db_session, mock_context, mock_ai_runtime) -> None:
+def test_ai_success_returns_ai_source(
+    db_session, mock_context, mock_ai_runtime
+) -> None:
     """Successful Gemini JSON response returns AI response plan."""
     ai_response = AIResponsePlanResponse(
         priority="P2",
@@ -52,14 +57,18 @@ def test_ai_success_returns_ai_source(db_session, mock_context, mock_ai_runtime)
     with patch("agents.response.service.get_ai_runtime", return_value=mock_runtime):
         with patch.object(service, "_gather_context", return_value=mock_context):
             with patch.object(service, "_call_gemini", return_value=ai_response):
-                result = service.plan(ResponsePlanInput(incident_id=mock_context.incident.id))
+                result = service.plan(
+                    ResponsePlanInput(incident_id=mock_context.incident.id)
+                )
 
     assert result.source == ResponsePlanSource.AI
     assert result.priority == "P2"
     assert "Isolate affected endpoint" in result.containment
 
 
-def test_quota_exceeded_uses_fallback(db_session, mock_context, mock_ai_runtime) -> None:
+def test_quota_exceeded_uses_fallback(
+    db_session, mock_context, mock_ai_runtime
+) -> None:
     """429 quota errors trigger fallback response plan."""
     service = ResponsePlanningService(db_session)
     with patch.object(service, "_gather_context", return_value=mock_context):
@@ -72,7 +81,9 @@ def test_quota_exceeded_uses_fallback(db_session, mock_context, mock_ai_runtime)
                 None,
             ),
         ):
-            result = service.plan(ResponsePlanInput(incident_id=mock_context.incident.id))
+            result = service.plan(
+                ResponsePlanInput(incident_id=mock_context.incident.id)
+            )
 
     assert result.source == ResponsePlanSource.FALLBACK
     assert result.priority == "P2"
@@ -83,7 +94,9 @@ def test_invalid_json_uses_fallback(db_session, mock_context, mock_ai_runtime) -
     service = ResponsePlanningService(db_session)
     with patch.object(service, "_gather_context", return_value=mock_context):
         with patch.object(service, "_call_gemini", return_value=None):
-            result = service.plan(ResponsePlanInput(incident_id=mock_context.incident.id))
+            result = service.plan(
+                ResponsePlanInput(incident_id=mock_context.incident.id)
+            )
 
     assert result.source == ResponsePlanSource.FALLBACK
 
@@ -101,12 +114,16 @@ def test_timeout_uses_fallback(db_session, mock_context, mock_ai_runtime) -> Non
     with patch.object(service, "_gather_context", return_value=mock_context):
         with patch.object(service, "_call_gemini", side_effect=slow_call):
             with patch("agents.response.service.AI_REQUEST_TIMEOUT_SECONDS", 0.01):
-                result = service.plan(ResponsePlanInput(incident_id=mock_context.incident.id))
+                result = service.plan(
+                    ResponsePlanInput(incident_id=mock_context.incident.id)
+                )
 
     assert result.source == ResponsePlanSource.FALLBACK
 
 
-def test_missing_api_key_uses_fallback(db_session, mock_context, mock_ai_runtime) -> None:
+def test_missing_api_key_uses_fallback(
+    db_session, mock_context, mock_ai_runtime
+) -> None:
     """Missing API key triggers fallback without raising."""
     mock_ai_runtime.provider.get_api_key.return_value = ""
     mock_ai_runtime.provider.has_api_key.return_value = False

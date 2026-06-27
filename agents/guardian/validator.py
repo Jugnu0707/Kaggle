@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Type
+from typing import Any
 
 from pydantic import BaseModel, Field, ValidationError
 
@@ -23,7 +23,6 @@ from agents.mitre.models import MitreMappingResult
 from agents.response.models import ResponsePlanResult
 from agents.risk.models import RiskAssessmentResult
 from agents.threat_intelligence.models import ThreatIntelligenceFinding
-
 from app.core.guardian_config import guardian_settings
 from app.core.logging import get_logger
 
@@ -38,7 +37,7 @@ class ThreatIntelligenceGuardianSchema(BaseModel):
     findings: list[ThreatIntelligenceFinding]
 
 
-AGENT_SCHEMAS: dict[GuardianAgentName, Type[BaseModel]] = {
+AGENT_SCHEMAS: dict[GuardianAgentName, type[BaseModel]] = {
     GuardianAgentName.EVIDENCE: EvidenceResult,
     GuardianAgentName.THREAT_INTELLIGENCE: ThreatIntelligenceGuardianSchema,
     GuardianAgentName.MITRE: MitreMappingResult,
@@ -62,9 +61,7 @@ def _is_empty_response(response: dict[str, Any]) -> bool:
         return True
 
     meaningful_values = [
-        value
-        for value in response.values()
-        if value not in (None, "", [], {})
+        value for value in response.values() if value not in (None, "", [], {})
     ]
     return len(meaningful_values) == 0
 
@@ -81,7 +78,9 @@ def _validate_schema(agent: GuardianAgentName, response: dict[str, Any]) -> list
         return [f"Schema validation failed: {error['msg']}" for error in exc.errors()]
 
 
-def _validate_mandatory_fields(agent: GuardianAgentName, response: dict[str, Any]) -> list[str]:
+def _validate_mandatory_fields(
+    agent: GuardianAgentName, response: dict[str, Any]
+) -> list[str]:
     issues: list[str] = []
     for field in MANDATORY_FIELDS.get(agent, ()):
         value = response.get(field)
@@ -147,7 +146,10 @@ class GuardianValidator:
         injection_findings = scan_response_for_injection(response)
         if injection_findings:
             issues.extend(
-                [f"Prompt injection detected: {phrase}" for phrase in injection_findings]
+                [
+                    f"Prompt injection detected: {phrase}"
+                    for phrase in injection_findings
+                ]
             )
             return GuardianValidationResult(
                 status=ValidationStatus.REJECTED,
@@ -162,7 +164,12 @@ class GuardianValidator:
             response, masked_secret_labels = mask_secrets_in_response(response)
             if masked_secret_labels:
                 actions.append("masked_secrets")
-                issues.extend([f"Secret detected and masked: {label}" for label in masked_secret_labels])
+                issues.extend(
+                    [
+                        f"Secret detected and masked: {label}"
+                        for label in masked_secret_labels
+                    ]
+                )
 
         pii_blocking: list[str] = []
         pii_warnings: list[str] = []
@@ -170,7 +177,9 @@ class GuardianValidator:
             response, pii_blocking, pii_warnings = mask_pii_in_response(response)
             if pii_blocking:
                 actions.append("masked_pii")
-                issues.extend([f"PII detected and masked: {label}" for label in pii_blocking])
+                issues.extend(
+                    [f"PII detected and masked: {label}" for label in pii_blocking]
+                )
             if pii_warnings:
                 issues.extend([f"PII warning: {label}" for label in pii_warnings])
         else:

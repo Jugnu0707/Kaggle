@@ -22,13 +22,12 @@ BACKEND_ROOT = REPO_ROOT / "backend"
 sys.path.insert(0, str(BACKEND_ROOT))
 os.chdir(BACKEND_ROOT)
 
-import app.models  # noqa: E402, F401
-
 from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
+import app.models  # noqa: E402, F401
 from app.db.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 
@@ -85,8 +84,8 @@ def main() -> None:
 
     client = TestClient(app)
 
-    from app.core.adk_runtime import initialize_adk_runtime
     from app.ai.runtime import initialize_ai_runtime
+    from app.core.adk_runtime import initialize_adk_runtime
     from app.core.evidence_runtime import initialize_evidence_runtime
     from app.core.executive_report_runtime import initialize_executive_report_runtime
     from app.core.guardian_runtime import initialize_guardian_runtime
@@ -94,7 +93,9 @@ def main() -> None:
     from app.core.mitre_runtime import initialize_mitre_runtime
     from app.core.response_runtime import initialize_response_runtime
     from app.core.risk_runtime import initialize_risk_runtime
-    from app.core.threat_intelligence_runtime import initialize_threat_intelligence_runtime
+    from app.core.threat_intelligence_runtime import (
+        initialize_threat_intelligence_runtime,
+    )
 
     initialize_adk_runtime()
     initialize_evidence_runtime()

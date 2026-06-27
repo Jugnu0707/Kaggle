@@ -4,21 +4,23 @@ import uuid
 from unittest.mock import patch
 
 import pytest
+from agents.conftest import build_mock_ai_runtime
 from agents.coordinator.models import CoordinatorInput
 from agents.coordinator.orchestrator import DEFAULT_WORKFLOW, CoordinatorOrchestrator
-from agents.conftest import build_mock_ai_runtime
+from mcp.registry import ToolResult
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import NotFoundException
 from app.models.enums import IncidentStatus, Severity
 from app.models.incident import Incident
-from mcp.registry import ToolResult
 
 
 @pytest.fixture
 def mock_ai_runtime():
     mock_runtime = build_mock_ai_runtime()
-    with patch("agents.coordinator.orchestrator.get_ai_runtime", return_value=mock_runtime):
+    with patch(
+        "agents.coordinator.orchestrator.get_ai_runtime", return_value=mock_runtime
+    ):
         yield mock_runtime
 
 
@@ -37,7 +39,9 @@ def _create_incident(db_session: Session) -> uuid.UUID:
     return incident.id
 
 
-def test_orchestrator_generates_default_workflow(db_session: Session, mock_ai_runtime) -> None:
+def test_orchestrator_generates_default_workflow(
+    db_session: Session, mock_ai_runtime
+) -> None:
     """Coordinator generates the expected placeholder workflow."""
     incident_id = _create_incident(db_session)
     orchestrator = CoordinatorOrchestrator()
@@ -53,9 +57,13 @@ def test_orchestrator_generates_default_workflow(db_session: Session, mock_ai_ru
     assert duration_ms >= 0
 
 
-def test_orchestrator_rejects_missing_incident(db_session: Session, mock_ai_runtime) -> None:
+def test_orchestrator_rejects_missing_incident(
+    db_session: Session, mock_ai_runtime
+) -> None:
     """Invalid incident IDs raise a not-found error."""
-    mock_ai_runtime.invoke_tool.return_value = ToolResult(success=False, error="Incident not found")
+    mock_ai_runtime.invoke_tool.return_value = ToolResult(
+        success=False, error="Incident not found"
+    )
     orchestrator = CoordinatorOrchestrator()
 
     with pytest.raises(NotFoundException, match="Incident not found"):

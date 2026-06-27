@@ -21,7 +21,9 @@ class ExecutiveReportInput(BaseModel):
         },
     )
 
-    incident_id: uuid.UUID = Field(description="Incident to generate an executive report for")
+    incident_id: uuid.UUID = Field(
+        description="Incident to generate an executive report for"
+    )
 
 
 class ExecutiveReportResult(BaseModel):

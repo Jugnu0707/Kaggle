@@ -67,9 +67,15 @@ class CoordinatorOrchestrator:
         if resolved_incident_id is None and log_file is not None:
             resolved_incident_id = log_file.incident_id
 
-        if incident_id is not None and log_file is not None and log_file.incident_id is not None:
+        if (
+            incident_id is not None
+            and log_file is not None
+            and log_file.incident_id is not None
+        ):
             if log_file.incident_id != incident_id:
-                raise NotFoundException("Log file is not linked to the specified incident")
+                raise NotFoundException(
+                    "Log file is not linked to the specified incident"
+                )
 
         logger.info(
             "Orchestration validation passed: incident_id=%s log_id=%s",

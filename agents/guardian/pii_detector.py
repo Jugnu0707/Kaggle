@@ -20,7 +20,9 @@ PII_PATTERNS: tuple[tuple[str, re.Pattern[str], str, bool], ...] = (
     ),
     (
         "Phone Number",
-        re.compile(r"\b(?:\+?\d{1,3}[-.\s]?)?(?:\(\d{2,4}\)[-.\s]?)?\d{3,4}[-.\s]?\d{4}\b"),
+        re.compile(
+            r"\b(?:\+?\d{1,3}[-.\s]?)?(?:\(\d{2,4}\)[-.\s]?)?\d{3,4}[-.\s]?\d{4}\b"
+        ),
         PHONE_MASK,
         False,
     ),
@@ -44,7 +46,9 @@ PII_PATTERNS: tuple[tuple[str, re.Pattern[str], str, bool], ...] = (
     ),
     (
         "IP Address",
-        re.compile(r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\b"),
+        re.compile(
+            r"\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\b"
+        ),
         "[REDACTED_IP]",
         True,
     ),

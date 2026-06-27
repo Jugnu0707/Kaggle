@@ -53,7 +53,9 @@ class AgentMetrics:
     def mean_execution_time_ms(self) -> float:
         if not self.executions:
             return 0.0
-        return sum(item.execution_time_ms for item in self.executions) / len(self.executions)
+        return sum(item.execution_time_ms for item in self.executions) / len(
+            self.executions
+        )
 
     @property
     def ai_used_count(self) -> int:
@@ -65,7 +67,9 @@ class AgentMetrics:
 
     @property
     def mean_confidence(self) -> float | None:
-        values = [item.confidence for item in self.executions if item.confidence is not None]
+        values = [
+            item.confidence for item in self.executions if item.confidence is not None
+        ]
         if not values:
             return None
         return sum(values) / len(values)

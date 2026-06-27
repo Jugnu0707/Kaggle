@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from evaluation.metrics import AgentMetrics, EvaluationSummary
-from evaluation.scorer import calculate_health_breakdown, calculate_health_score
+from evaluation.scorer import calculate_health_breakdown
 
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 
@@ -34,7 +34,9 @@ def _serialize_agent(agent: AgentMetrics) -> dict[str, object]:
         "ai_used_count": agent.ai_used_count,
         "fallback_used_count": agent.fallback_used_count,
         "mean_confidence": (
-            round(agent.mean_confidence, 2) if agent.mean_confidence is not None else None
+            round(agent.mean_confidence, 2)
+            if agent.mean_confidence is not None
+            else None
         ),
         "mean_retry_count": round(agent.mean_retry_count, 2),
         "mean_output_size": round(agent.mean_output_size, 2),
@@ -106,6 +108,17 @@ def generate_markdown_report(summary: EvaluationSummary) -> Path:
             f"| {agent.agent_name} | {agent.ai_used_count} | {agent.fallback_used_count} |"
         )
 
-    lines.extend(["", "## Health Score Weights", "", "- Availability: 30%", "- Reliability: 30%", "- Performance: 20%", "- Accuracy: 20%", ""])
+    lines.extend(
+        [
+            "",
+            "## Health Score Weights",
+            "",
+            "- Availability: 30%",
+            "- Reliability: 30%",
+            "- Performance: 20%",
+            "- Accuracy: 20%",
+            "",
+        ]
+    )
     output_path.write_text("\n".join(lines), encoding="utf-8")
     return output_path

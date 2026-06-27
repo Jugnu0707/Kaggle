@@ -217,4 +217,7 @@ def test_empty_file_produces_zero_entries(upload_dir, db_session: Session) -> No
 
     assert result.status == "completed"
     assert result.evidence_package.number_of_lines == 0
-    assert "no parseable entries" in result.evidence_summary.data_quality_observations[0].lower()
+    assert (
+        "no parseable entries"
+        in result.evidence_summary.data_quality_observations[0].lower()
+    )

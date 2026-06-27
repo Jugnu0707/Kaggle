@@ -30,9 +30,10 @@ if str(BACKEND_ROOT) not in sys.path:
 
 os.chdir(BACKEND_ROOT)
 
-from app.core.config import get_database_path  # noqa: E402
 from scripts.demo_catalog import DEMO_INCIDENTS, EXPECTED_LOG_COUNT  # noqa: E402
 from scripts.seed_demo_data import reset_and_seed_demo  # noqa: E402
+
+from app.core.config import get_database_path  # noqa: E402
 
 
 def main() -> None:
@@ -47,7 +48,9 @@ def main() -> None:
     print(f"  Investigations created:  {stats.investigations}")
     print(f"  Investigation runs:      {stats.investigation_runs}")
     print(f"  Evidence records:        {stats.evidence}")
-    print(f"  Uploaded logs:           {stats.log_files} (expected {EXPECTED_LOG_COUNT})")
+    print(
+        f"  Uploaded logs:           {stats.log_files} (expected {EXPECTED_LOG_COUNT})"
+    )
     print(f"  Audit records:           {stats.audit_logs}")
     print("\nStart the application:")
     print("  ./scripts/dev.sh")

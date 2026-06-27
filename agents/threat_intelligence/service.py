@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import uuid
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from pathlib import Path
 
 from google.genai import errors as genai_errors
@@ -15,8 +16,8 @@ from agents.evidence.models import EvidenceInput, EvidencePackage
 from agents.evidence.service import EvidenceCollectionService
 from agents.threat_intelligence.fallback import enrich_ioc_fallback
 from agents.threat_intelligence.ioc_extractor import (
-    IOCExtractor,
     IOC_TYPE_TO_BREAKDOWN,
+    IOCExtractor,
     detect_suspicious_indicators,
 )
 from agents.threat_intelligence.models import (
@@ -76,7 +77,9 @@ class ThreatIntelligenceService:
             primary_package=package,
         )
 
-    def _collect_incident_evidence(self, incident_id: uuid.UUID) -> list[EvidencePackage]:
+    def _collect_incident_evidence(
+        self, incident_id: uuid.UUID
+    ) -> list[EvidencePackage]:
         log_files = list(
             self.db.scalars(
                 select(LogFile).where(
@@ -100,7 +103,9 @@ class ThreatIntelligenceService:
         packages: list[EvidencePackage],
         primary_package: EvidencePackage | None,
     ) -> ThreatIntelligenceResult:
-        logger.info("Evidence received for threat intelligence: incident_id=%s", incident_id)
+        logger.info(
+            "Evidence received for threat intelligence: incident_id=%s", incident_id
+        )
 
         combined_text = self._build_combined_text(packages)
         iocs = self._extract_iocs(packages)
@@ -118,7 +123,9 @@ class ThreatIntelligenceService:
             logger.info("Findings generated: source=FALLBACK count=%s", len(findings))
 
         report = self._build_report(packages, combined_text, iocs, findings)
-        logger.info("Threat intelligence report generated: total_iocs=%s", report.total_iocs)
+        logger.info(
+            "Threat intelligence report generated: total_iocs=%s", report.total_iocs
+        )
 
         return ThreatIntelligenceResult(
             status="completed",
@@ -170,7 +177,10 @@ class ThreatIntelligenceService:
                 )
                 response = future.result(timeout=AI_REQUEST_TIMEOUT_SECONDS)
         except FuturesTimeoutError:
-            logger.warning("AI failure reason: request timed out after %ss", AI_REQUEST_TIMEOUT_SECONDS)
+            logger.warning(
+                "AI failure reason: request timed out after %ss",
+                AI_REQUEST_TIMEOUT_SECONDS,
+            )
             return None
         except genai_errors.ClientError as exc:
             logger.warning("AI failure reason: %s", exc)
@@ -297,8 +307,12 @@ class ThreatIntelligenceService:
         results: list[str] = []
         if findings:
             results.append(f"{len(findings)} IOCs enriched with threat intelligence")
-            malicious = sum(1 for finding in findings if finding.reputation == "Malicious")
-            suspicious = sum(1 for finding in findings if finding.reputation == "Suspicious")
+            malicious = sum(
+                1 for finding in findings if finding.reputation == "Malicious"
+            )
+            suspicious = sum(
+                1 for finding in findings if finding.reputation == "Suspicious"
+            )
             if malicious:
                 results.append(f"{malicious} indicator(s) classified as Malicious")
             if suspicious:
@@ -306,18 +320,22 @@ class ThreatIntelligenceService:
         else:
             results.append("No IOCs extracted from the available evidence sample")
 
-        if packages and packages[0].timestamp_range.start and packages[0].timestamp_range.end:
+        if (
+            packages
+            and packages[0].timestamp_range.start
+            and packages[0].timestamp_range.end
+        ):
             results.append(
                 "Evidence spans "
                 f"{packages[0].timestamp_range.start} to {packages[0].timestamp_range.end}"
             )
 
         external_ips = {
-            ioc.value
-            for ioc in iocs
-            if ioc.type == "IPv4" and ioc.confidence >= 85
+            ioc.value for ioc in iocs if ioc.type == "IPv4" and ioc.confidence >= 85
         }
         if len(external_ips) > 1:
-            results.append(f"{len(external_ips)} distinct external IPv4 addresses identified")
+            results.append(
+                f"{len(external_ips)} distinct external IPv4 addresses identified"
+            )
 
         return results

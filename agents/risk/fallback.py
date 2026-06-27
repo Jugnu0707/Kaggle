@@ -109,7 +109,14 @@ def assess_risk_fallback(context: RiskAssessmentContext) -> RiskAssessmentResult
         level = RiskLevel.LOW
         matched_rules.append("No elevated risk indicators matched fallback rules")
 
-    confidence = min(95, max(60, _max_mitre_confidence(context) or int(context.incident.confidence_score * 100)))
+    confidence = min(
+        95,
+        max(
+            60,
+            _max_mitre_confidence(context)
+            or int(context.incident.confidence_score * 100),
+        ),
+    )
     summary = (
         f"Fallback risk assessment classified the incident as {level.value} "
         f"based on {len(matched_rules)} rule match(es)."

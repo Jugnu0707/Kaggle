@@ -61,12 +61,18 @@ def _extract_bullet_items(section_body: str) -> list[str]:
 def parse_markdown_report(markdown: str) -> dict[str, str | list[str]]:
     """Extract structured sections from a generated executive report."""
     return {
-        "key_findings": _extract_bullet_items(_extract_section_body(markdown, "Key Findings")),
+        "key_findings": _extract_bullet_items(
+            _extract_section_body(markdown, "Key Findings")
+        ),
         "recommended_actions": _extract_bullet_items(
             _extract_section_body(markdown, "Recommended Actions")
         ),
-        "lessons_learned": _extract_bullet_items(_extract_section_body(markdown, "Lessons Learned")),
-        "incident_timeline_summary": _extract_section_body(markdown, "Incident Timeline Summary"),
+        "lessons_learned": _extract_bullet_items(
+            _extract_section_body(markdown, "Lessons Learned")
+        ),
+        "incident_timeline_summary": _extract_section_body(
+            markdown, "Incident Timeline Summary"
+        ),
         "mitre_summary": _extract_section_body(markdown, "MITRE Summary"),
         "risk_summary": _extract_section_body(markdown, "Risk Summary"),
     }

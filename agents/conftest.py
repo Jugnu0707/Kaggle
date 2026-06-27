@@ -19,6 +19,8 @@ def build_mock_ai_runtime(api_key: str = "test-key") -> MagicMock:
     mock_runtime.provider = mock_provider
     mock_runtime.invoke_tool.return_value = ToolResult(success=True, data={"ok": True})
     mock_runtime.discover_tools.return_value = []
-    mock_runtime.create_agent_session.return_value = MagicMock(session_id="test-session")
+    mock_runtime.create_agent_session.return_value = MagicMock(
+        session_id="test-session"
+    )
     mock_runtime.close_agent_session.return_value = 1.0
     return mock_runtime

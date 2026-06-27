@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import json
 import uuid
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FuturesTimeoutError
 from pathlib import Path
 
 from google.genai import errors as genai_errors
@@ -58,7 +59,10 @@ class RiskAssessmentService:
 
         ai_result = self._try_ai_assessment(context)
         if ai_result is not None:
-            logger.info("Risk assessment completed: source=AI incident_id=%s", request.incident_id)
+            logger.info(
+                "Risk assessment completed: source=AI incident_id=%s",
+                request.incident_id,
+            )
             return ai_result
 
         logger.warning("Fallback activated: incident_id=%s", request.incident_id)
@@ -138,13 +142,18 @@ class RiskAssessmentService:
             logger.warning("AI failure reason: GOOGLE_API_KEY is not configured")
             return None
 
-        logger.info("AI request started: model=%s incident_id=%s", model, context.incident.id)
+        logger.info(
+            "AI request started: model=%s incident_id=%s", model, context.incident.id
+        )
         try:
             with ThreadPoolExecutor(max_workers=1) as executor:
                 future = executor.submit(self._call_gemini, api_key, model, context)
                 response = future.result(timeout=AI_REQUEST_TIMEOUT_SECONDS)
         except FuturesTimeoutError:
-            logger.warning("AI failure reason: request timed out after %ss", AI_REQUEST_TIMEOUT_SECONDS)
+            logger.warning(
+                "AI failure reason: request timed out after %ss",
+                AI_REQUEST_TIMEOUT_SECONDS,
+            )
             return None
         except genai_errors.ClientError as exc:
             logger.warning("AI failure reason: %s", exc)
@@ -159,7 +168,11 @@ class RiskAssessmentService:
         if response is None:
             return None
 
-        logger.info("AI success: incident_id=%s overall_risk=%s", context.incident.id, response.overall_risk)
+        logger.info(
+            "AI success: incident_id=%s overall_risk=%s",
+            context.incident.id,
+            response.overall_risk,
+        )
         return RiskAssessmentResult(
             source=RiskAssessmentSource.AI,
             overall_risk=response.overall_risk.value,

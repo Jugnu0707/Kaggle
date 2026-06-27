@@ -4,11 +4,14 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
-from google.genai import errors as genai_errors
-
 from agents.risk.models import RiskAssessmentInput
-from agents.risk.schemas import AIRiskAssessmentResponse, RiskAssessmentSource, RiskLevel
+from agents.risk.schemas import (
+    AIRiskAssessmentResponse,
+    RiskAssessmentSource,
+    RiskLevel,
+)
 from agents.risk.service import RiskAssessmentService
+from google.genai import errors as genai_errors
 
 
 @pytest.fixture
@@ -28,7 +31,9 @@ def mock_context():
     )
 
 
-def test_ai_success_returns_ai_source(db_session, mock_context, mock_ai_runtime) -> None:
+def test_ai_success_returns_ai_source(
+    db_session, mock_context, mock_ai_runtime
+) -> None:
     """Successful Gemini JSON response returns AI assessment."""
     ai_response = AIRiskAssessmentResponse(
         overall_risk=RiskLevel.HIGH,
@@ -44,14 +49,18 @@ def test_ai_success_returns_ai_source(db_session, mock_context, mock_ai_runtime)
     service = RiskAssessmentService(db_session)
     with patch.object(service, "_gather_context", return_value=mock_context):
         with patch.object(service, "_call_gemini", return_value=ai_response):
-            result = service.assess(RiskAssessmentInput(incident_id=mock_context.incident.id))
+            result = service.assess(
+                RiskAssessmentInput(incident_id=mock_context.incident.id)
+            )
 
     assert result.source == RiskAssessmentSource.AI
     assert result.overall_risk == "High"
     assert result.priority == "P2"
 
 
-def test_quota_exceeded_uses_fallback(db_session, mock_context, mock_ai_runtime) -> None:
+def test_quota_exceeded_uses_fallback(
+    db_session, mock_context, mock_ai_runtime
+) -> None:
     """429 quota errors trigger fallback assessment."""
     service = RiskAssessmentService(db_session)
     with patch.object(service, "_gather_context", return_value=mock_context):
@@ -64,7 +73,9 @@ def test_quota_exceeded_uses_fallback(db_session, mock_context, mock_ai_runtime)
                 None,
             ),
         ):
-            result = service.assess(RiskAssessmentInput(incident_id=mock_context.incident.id))
+            result = service.assess(
+                RiskAssessmentInput(incident_id=mock_context.incident.id)
+            )
 
     assert result.source == RiskAssessmentSource.FALLBACK
     assert result.overall_risk in {"High", "Medium", "Low", "Critical"}
@@ -75,7 +86,9 @@ def test_invalid_json_uses_fallback(db_session, mock_context, mock_ai_runtime) -
     service = RiskAssessmentService(db_session)
     with patch.object(service, "_gather_context", return_value=mock_context):
         with patch.object(service, "_call_gemini", return_value=None):
-            result = service.assess(RiskAssessmentInput(incident_id=mock_context.incident.id))
+            result = service.assess(
+                RiskAssessmentInput(incident_id=mock_context.incident.id)
+            )
 
     assert result.source == RiskAssessmentSource.FALLBACK
 
@@ -93,18 +106,24 @@ def test_timeout_uses_fallback(db_session, mock_context, mock_ai_runtime) -> Non
     with patch.object(service, "_gather_context", return_value=mock_context):
         with patch.object(service, "_call_gemini", side_effect=slow_call):
             with patch("agents.risk.service.AI_REQUEST_TIMEOUT_SECONDS", 0.01):
-                result = service.assess(RiskAssessmentInput(incident_id=mock_context.incident.id))
+                result = service.assess(
+                    RiskAssessmentInput(incident_id=mock_context.incident.id)
+                )
 
     assert result.source == RiskAssessmentSource.FALLBACK
 
 
-def test_missing_api_key_uses_fallback(db_session, mock_context, mock_ai_runtime) -> None:
+def test_missing_api_key_uses_fallback(
+    db_session, mock_context, mock_ai_runtime
+) -> None:
     """Missing API key triggers fallback without raising."""
     mock_ai_runtime.provider.get_api_key.return_value = ""
     mock_ai_runtime.provider.has_api_key.return_value = False
 
     service = RiskAssessmentService(db_session)
     with patch.object(service, "_gather_context", return_value=mock_context):
-        result = service.assess(RiskAssessmentInput(incident_id=mock_context.incident.id))
+        result = service.assess(
+            RiskAssessmentInput(incident_id=mock_context.incident.id)
+        )
 
     assert result.source == RiskAssessmentSource.FALLBACK

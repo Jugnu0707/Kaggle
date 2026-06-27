@@ -5,7 +5,9 @@ from agents.guardian.pii_detector import mask_pii_in_text
 
 def test_mask_pii_in_text_masks_email() -> None:
     """Email addresses are masked."""
-    masked, blocking, warnings = mask_pii_in_text("Contact analyst@example.com for updates.")
+    masked, blocking, warnings = mask_pii_in_text(
+        "Contact analyst@example.com for updates."
+    )
     assert "Email Address" in blocking
     assert "[REDACTED_EMAIL]" in masked
     assert "analyst@example.com" not in masked

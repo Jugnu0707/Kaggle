@@ -39,7 +39,9 @@ class MitreMappingService:
         if not incident_result.success:
             raise NotFoundException("Incident not found")
 
-        logger.info("Evidence received for MITRE mapping: incident_id=%s", request.incident_id)
+        logger.info(
+            "Evidence received for MITRE mapping: incident_id=%s", request.incident_id
+        )
         packages = self._collect_incident_evidence(request.incident_id)
         combined_text = self._build_mapping_text(packages)
 
@@ -74,7 +76,9 @@ class MitreMappingService:
             evidence_packages=[package],
         )
 
-    def _collect_incident_evidence(self, incident_id: uuid.UUID) -> list[EvidencePackage]:
+    def _collect_incident_evidence(
+        self, incident_id: uuid.UUID
+    ) -> list[EvidencePackage]:
         stmt = select(LogFile).where(
             LogFile.incident_id == incident_id,
             LogFile.deleted_at.is_(None),

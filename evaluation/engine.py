@@ -34,7 +34,9 @@ class EvaluationEngine:
         """Calculate overall and per-agent health scores."""
         agents = self.aggregate_metrics(metrics)
         if not agents:
-            return EvaluationSummary(overall_score=0, agents=[], generated_at=datetime.now(UTC))
+            return EvaluationSummary(
+                overall_score=0, agents=[], generated_at=datetime.now(UTC)
+            )
 
         agent_scores = [calculate_health_score(agent) for agent in agents]
         overall_score = int(round(sum(agent_scores) / len(agent_scores)))

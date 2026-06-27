@@ -6,10 +6,11 @@ import uuid
 from enum import Enum
 from typing import Literal
 
+from pydantic import BaseModel, Field
+
 from agents.evidence.models import EvidenceSummary
 from agents.mitre.models import MappedTechnique
 from agents.threat_intelligence.models import ThreatIntelligenceReport
-from pydantic import BaseModel, ConfigDict, Field
 
 
 class ResponsePlanSource(str, Enum):
@@ -47,7 +48,9 @@ class ResponsePlanningContext(BaseModel):
     incident: IncidentContext
     evidence_summaries: list[EvidenceSummary] = Field(default_factory=list)
     mitre_techniques: list[MappedTechnique] = Field(default_factory=list)
-    threat_intelligence_reports: list[ThreatIntelligenceReport] = Field(default_factory=list)
+    threat_intelligence_reports: list[ThreatIntelligenceReport] = Field(
+        default_factory=list
+    )
     risk_assessment: RiskAssessmentContext | None = None
     total_iocs: int = 0
     suspicious_indicators: list[str] = Field(default_factory=list)

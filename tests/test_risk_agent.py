@@ -5,12 +5,12 @@ from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 import pytest
+from agents.risk.schemas import AIRiskAssessmentResponse, RiskLevel
 from fastapi.testclient import TestClient
 from google.genai import errors as genai_errors
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from agents.risk.schemas import AIRiskAssessmentResponse, RiskLevel
 from app.models.agent_execution import AgentExecution
 from app.models.enums import AgentExecutionStatus
 from app.models.risk_assessment import RiskAssessment

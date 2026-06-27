@@ -19,9 +19,7 @@ IPV6_PATTERN = re.compile(
     r"\b:(?:[0-9a-fA-F]{1,4}:){1,7}[0-9a-fA-F]{1,4}\b"
 )
 URL_PATTERN = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
-EMAIL_PATTERN = re.compile(
-    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
-)
+EMAIL_PATTERN = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b")
 SHA256_PATTERN = re.compile(r"\b[a-fA-F0-9]{64}\b")
 SHA1_PATTERN = re.compile(r"\b[a-fA-F0-9]{40}\b")
 MD5_PATTERN = re.compile(r"\b[a-fA-F0-9]{32}\b")
@@ -200,13 +198,27 @@ class IOCExtractor:
         hash_spans = self._collect_hash_spans(text)
         candidates: list[tuple[IOCType, str]] = []
 
-        candidates.extend(("SHA256", match.group(0)) for match in SHA256_PATTERN.finditer(text))
-        candidates.extend(("SHA1", match.group(0)) for match in SHA1_PATTERN.finditer(text))
-        candidates.extend(("MD5", match.group(0)) for match in MD5_PATTERN.finditer(text))
-        candidates.extend(("URL", match.group(0)) for match in URL_PATTERN.finditer(text))
-        candidates.extend(("Email", match.group(0)) for match in EMAIL_PATTERN.finditer(text))
-        candidates.extend(("IPv4", match.group(0)) for match in IPV4_PATTERN.finditer(text))
-        candidates.extend(("IPv6", match.group(0)) for match in IPV6_PATTERN.finditer(text))
+        candidates.extend(
+            ("SHA256", match.group(0)) for match in SHA256_PATTERN.finditer(text)
+        )
+        candidates.extend(
+            ("SHA1", match.group(0)) for match in SHA1_PATTERN.finditer(text)
+        )
+        candidates.extend(
+            ("MD5", match.group(0)) for match in MD5_PATTERN.finditer(text)
+        )
+        candidates.extend(
+            ("URL", match.group(0)) for match in URL_PATTERN.finditer(text)
+        )
+        candidates.extend(
+            ("Email", match.group(0)) for match in EMAIL_PATTERN.finditer(text)
+        )
+        candidates.extend(
+            ("IPv4", match.group(0)) for match in IPV4_PATTERN.finditer(text)
+        )
+        candidates.extend(
+            ("IPv6", match.group(0)) for match in IPV6_PATTERN.finditer(text)
+        )
 
         for match in DOMAIN_PATTERN.finditer(text):
             if self._span_overlaps_hash(match.start(), match.end(), hash_spans):
@@ -246,12 +258,19 @@ class IOCExtractor:
     def _collect_hash_spans(self, text: str) -> list[tuple[int, int]]:
         spans: list[tuple[int, int]] = []
         for pattern in (SHA256_PATTERN, SHA1_PATTERN, MD5_PATTERN):
-            spans.extend((match.start(), match.end()) for match in pattern.finditer(text))
+            spans.extend(
+                (match.start(), match.end()) for match in pattern.finditer(text)
+            )
         return spans
 
     @staticmethod
-    def _span_overlaps_hash(start: int, end: int, hash_spans: list[tuple[int, int]]) -> bool:
-        return any(start >= span_start and end <= span_end for span_start, span_end in hash_spans)
+    def _span_overlaps_hash(
+        start: int, end: int, hash_spans: list[tuple[int, int]]
+    ) -> bool:
+        return any(
+            start >= span_start and end <= span_end
+            for span_start, span_end in hash_spans
+        )
 
     @staticmethod
     def _validate(ioc_type: IOCType, value: str) -> bool:
@@ -278,14 +297,20 @@ def detect_suspicious_indicators(text: str, iocs: list[IOC]) -> list[str]:
 
     if any(keyword in lowered for keyword in SUSPICIOUS_KEYWORDS):
         if "powershell" in lowered or "-enc" in lowered:
-            findings.append("Encoded or suspicious PowerShell activity pattern detected")
+            findings.append(
+                "Encoded or suspicious PowerShell activity pattern detected"
+            )
         if "failed logon" in lowered or "event=4625" in lowered:
             findings.append("Repeated authentication failure pattern detected")
         if "ransomware" in lowered or "encrypt" in lowered:
-            findings.append("File encryption or ransomware-related activity pattern detected")
+            findings.append(
+                "File encryption or ransomware-related activity pattern detected"
+            )
 
     external_ips = [
-        ioc.value for ioc in iocs if ioc.type == "IPv4" and not is_private_ipv4(ioc.value)
+        ioc.value
+        for ioc in iocs
+        if ioc.type == "IPv4" and not is_private_ipv4(ioc.value)
     ]
     if external_ips:
         findings.append("External IPv4 address observed in evidence entries")

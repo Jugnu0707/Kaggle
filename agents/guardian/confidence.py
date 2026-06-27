@@ -12,7 +12,7 @@ def extract_confidence_values(response: dict[str, Any]) -> list[int]:
     def _walk(node: Any) -> None:
         if isinstance(node, dict):
             for key, value in node.items():
-                if key == "confidence" and isinstance(value, (int, float)):
+                if key == "confidence" and isinstance(value, int | float):
                     values.append(int(value))
                 else:
                     _walk(value)
@@ -47,7 +47,7 @@ def validate_confidence(
             if finding_source and finding_source != "AI":
                 continue
             confidence = finding.get("confidence")
-            if isinstance(confidence, (int, float)):
+            if isinstance(confidence, int | float):
                 confidence_values.append(int(confidence))
     else:
         confidence_values = extract_confidence_values(response)

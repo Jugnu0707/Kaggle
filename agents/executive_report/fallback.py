@@ -21,7 +21,11 @@ def _timeline_summary(context: ExecutiveReportContext) -> str:
             "Investigation activities are underway to establish a complete timeline."
         )
 
-    ranges = [summary.time_range for summary in context.evidence_summaries if summary.time_range]
+    ranges = [
+        summary.time_range
+        for summary in context.evidence_summaries
+        if summary.time_range
+    ]
     if ranges:
         earliest_range = ranges[0]
         return (
@@ -162,7 +166,9 @@ def _executive_summary(context: ExecutiveReportContext, business_impact: str) ->
     )
 
 
-def generate_executive_report_fallback(context: ExecutiveReportContext) -> ExecutiveReportResult:
+def generate_executive_report_fallback(
+    context: ExecutiveReportContext,
+) -> ExecutiveReportResult:
     """Generate a deterministic executive report without AI."""
     business_impact = _business_impact(context)
     sections = ReportSections(

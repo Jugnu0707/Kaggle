@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipaddress
 
 from agents.threat_intelligence.ioc_extractor import is_private_ipv4
-from agents.threat_intelligence.models import IOC, IOCType
+from agents.threat_intelligence.models import IOC
 from agents.threat_intelligence.schemas import Reputation, ReputationAssessment
 
 # Sample ransomware hashes for offline matching (expandable without API calls).
@@ -71,7 +71,10 @@ def assess_reputation(ioc: IOC, *, context_text: str = "") -> ReputationAssessme
         )
 
     if ioc_type == "URL":
-        if any(token in lowered for token in SUSPICIOUS_URL_TOKENS) or "powershell" in context:
+        if (
+            any(token in lowered for token in SUSPICIOUS_URL_TOKENS)
+            or "powershell" in context
+        ):
             return ReputationAssessment(
                 reputation=Reputation.SUSPICIOUS,
                 confidence=88,

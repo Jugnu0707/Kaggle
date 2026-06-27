@@ -62,7 +62,9 @@ class ToolRegistry:
         """Return all registered tool definitions sorted by name."""
         return [self._tools[name] for name in self.list_tools()]
 
-    def invoke(self, name: str, payload: dict[str, Any], db: Session) -> ToolResult[Any]:
+    def invoke(
+        self, name: str, payload: dict[str, Any], db: Session
+    ) -> ToolResult[Any]:
         """Validate input, execute a tool handler, and return a structured result."""
         tool = self.get_tool(name)
         if tool is None:

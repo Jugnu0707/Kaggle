@@ -118,9 +118,7 @@ def test_mitre_endpoint_maps_powershell_logs(
     assert executions[0].status == AgentExecutionStatus.COMPLETED
 
 
-def test_mitre_endpoint_maps_failed_login_logs(
-    client: TestClient, upload_dir
-) -> None:
+def test_mitre_endpoint_maps_failed_login_logs(client: TestClient, upload_dir) -> None:
     """POST /agents/mitre maps failed login evidence to T1110."""
     incident_id = _create_incident(client)
     _upload_log(client, "failed_login.log", FAILED_LOGIN_LOG, incident_id)
