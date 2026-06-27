@@ -15,6 +15,7 @@ API_INVENTORY: list[tuple[str, str, int | set[int]]] = [
     ("GET", "/", 200),
     ("GET", "/api/v1/health", 200),
     ("GET", "/api/v1/ai/health", {200, 503}),
+    ("GET", "/api/v1/ai/test", 200),
     ("GET", "/api/v1/dashboard/stats", 200),
     ("GET", "/api/v1/evaluation", 200),
     ("GET", "/api/v1/evaluation/{agent_name}", {200, 404}),

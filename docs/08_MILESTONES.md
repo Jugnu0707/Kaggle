@@ -16,7 +16,9 @@
 | Sprint 2 | ADK & MCP | **Complete** | Google ADK runtime, MCP registry (5 tools), Coordinator orchestration plan, Evidence Agent |
 | Sprint 3 | Agents & workflow | **Complete** | 6 specialist agents, Guardian, Timeline Engine, Evaluation framework, Investigation Runner |
 | Sprint 3.5 | Competition prep | **Complete** | Doc sync (T1), ADK/MCP runtime (T2), hardening (T3), demo assets (T4) |
-| Sprint 4 | Release hardening | **Planned** | Auth, approval workflow, datasets, submission prep |
+| Sprint 4 Task 1 | Repository quality | **Complete** | README rewrite, architecture docs, community files, readiness report |
+| Sprint 4 Task 2 | Kaggle submission docs | **Complete** | `docs/kaggle/` written materials for capstone submission |
+| Sprint 4 | Release hardening | **In progress** | Auth, approval workflow, datasets, submission notebook |
 
 ---
 
@@ -40,12 +42,13 @@
 
 | Metric | Value |
 |--------|-------|
-| API endpoints | 35 |
-| Database tables | 15 |
+| API paths | 35 |
+| API operations | 39 |
+| Database tables | 16 |
 | AI agents | 8 |
 | MCP tools (registered) | 5 |
-| Frontend routes | 9 |
-| Tests (`tests/` + `evaluation/tests/` + agent tests) | **171** collected |
+| Frontend pages | 10 |
+| Tests | **176** collected |
 
 ---
 
