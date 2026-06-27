@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Sprint 4 Task 4: Submission readiness — diagrams, screenshots, verification report, final checklist
+- Sprint 4 Task 5: Final submission package, readiness report, competition scorecard
+- Sprint 4 Task 4: Submission readiness — diagrams, evidence screenshot, final checklist
 - Sprint 4 Task 3: Demo video preparation (`docs/demo/` script, storyboard, FAQ)
 - Sprint 4 Task 2: Kaggle submission writeup (`docs/kaggle/`)
 - Sprint 4 Task 1: Professional open-source repository presentation

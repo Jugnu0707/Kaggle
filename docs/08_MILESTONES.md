@@ -19,8 +19,9 @@
 | Sprint 4 Task 1 | Repository quality | **Complete** | README rewrite, architecture docs, community files, readiness report |
 | Sprint 4 Task 2 | Kaggle submission docs | **Complete** | `docs/kaggle/` written materials for capstone submission |
 | Sprint 4 Task 3 | Demo video prep | **Complete** | `docs/demo/` script, storyboard, narration, checklist, flow, FAQ |
-| Sprint 4 Task 4 | Submission readiness | **Complete** | Diagrams, screenshots, verification report, final checklist |
-| Sprint 4 | Release hardening | **In progress** | Notebook + video recording remaining |
+| Sprint 4 Task 4 | Submission readiness | **Complete** | Diagrams, verification, final checklist |
+| Sprint 4 Task 5 | Final submission prep | **Complete** | Submission package, scorecard, acceptance checklist |
+| Sprint 4 | Release packaging | **In progress** | Notebook + video recording |
 
 ---
 

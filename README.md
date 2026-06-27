@@ -10,6 +10,8 @@
 
 **Enterprise Incident Response Platform** · v0.1.0 · **Submission Ready**
 
+Submission package: [`docs/submission/`](docs/submission/) · Final report: [`docs/FINAL_READINESS_REPORT.md`](docs/FINAL_READINESS_REPORT.md)
+
 Oz AI is an open-source, multi-agent platform for enterprise security incident response. It combines a FastAPI backend, React dashboard, eight Google ADK specialist agents, Guardian safety validation, MCP operational tools, and an end-to-end investigation workflow — built for the **Kaggle AI Agents Intensive Capstone** (Agents for Business track).
 
 ---
@@ -50,7 +52,7 @@ Full checklist: [`docs/kaggle/final_checklist.md`](docs/kaggle/final_checklist.m
 | Database tables | **16** |
 | Frontend pages | **10** |
 | Automated tests | **176** |
-| Documentation files | **46** |
+| Documentation files | **47** |
 | Lines of code (approx.) | **29,333** |
 
 Regenerate: `python scripts/generate_repo_stats.py`
@@ -404,7 +406,9 @@ See [`ROADMAP.md`](ROADMAP.md) for v0.2.0+ plans.
 | [`docs/COMPETITION_ALIGNMENT.md`](docs/COMPETITION_ALIGNMENT.md) | Kaggle requirement mapping |
 | [`docs/07_SUBMISSION_CHECKLIST.md`](docs/07_SUBMISSION_CHECKLIST.md) | Pre-submission checklist |
 | [`docs/kaggle/final_checklist.md`](docs/kaggle/final_checklist.md) | Pre-submission verification |
-| [`docs/SUBMISSION_VERIFICATION_REPORT.md`](docs/SUBMISSION_VERIFICATION_REPORT.md) | Sprint 4 submission audit |
+| [`docs/submission/`](docs/submission/) | Kaggle submission package |
+| [`docs/FINAL_READINESS_REPORT.md`](docs/FINAL_READINESS_REPORT.md) | Sprint 4 final readiness (Task 5) |
+| [`docs/COMPETITION_SCORECARD.md`](docs/COMPETITION_SCORECARD.md) | Competition assessment (84/100) |
 | [`docs/diagrams/`](docs/diagrams/) | GitHub-renderable Mermaid diagrams |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release history |
 
