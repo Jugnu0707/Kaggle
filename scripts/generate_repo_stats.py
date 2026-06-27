@@ -1,4 +1,4 @@
-"""Generate repository statistics for README and readiness reports."""
+"""Generate repository statistics for README and Kaggle submission."""
 
 from __future__ import annotations
 
@@ -8,6 +8,18 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BACKEND = REPO_ROOT / "backend"
+
+CODE_DIRS = [
+    "agents",
+    "backend/app",
+    "backend/scripts",
+    "evaluation",
+    "mcp",
+    "tests",
+    "frontend/src",
+    "scripts",
+]
+CODE_EXTENSIONS = {".py", ".ts", ".tsx"}
 
 
 def count_openapi_operations() -> dict[str, int]:
@@ -72,11 +84,7 @@ def count_mcp_tools() -> int:
 def count_agents() -> int:
     agents_dir = REPO_ROOT / "agents"
     return len(
-        [
-            p
-            for p in agents_dir.iterdir()
-            if p.is_dir() and (p / "agent.py").exists()
-        ]
+        [p for p in agents_dir.iterdir() if p.is_dir() and (p / "agent.py").exists()]
     )
 
 
@@ -84,6 +92,32 @@ def count_db_tables() -> int:
     models_dir = REPO_ROOT / "backend" / "app" / "models"
     skip = {"__init__.py", "base.py", "enums.py"}
     return len([p for p in models_dir.glob("*.py") if p.name not in skip])
+
+
+def count_documentation_files() -> int:
+    docs_dir = REPO_ROOT / "docs"
+    root_docs = ["README.md", "CHANGELOG.md", "ROADMAP.md", "CONTRIBUTING.md"]
+    count = sum(1 for p in root_docs if (REPO_ROOT / p).exists())
+    count += len(list(docs_dir.rglob("*.md")))
+    return count
+
+
+def count_lines_of_code() -> int:
+    total = 0
+    for rel_dir in CODE_DIRS:
+        base = REPO_ROOT / rel_dir
+        if not base.exists():
+            continue
+        for path in base.rglob("*"):
+            if path.suffix not in CODE_EXTENSIONS:
+                continue
+            if any(part in path.parts for part in (".venv", "node_modules", "__pycache__")):
+                continue
+            try:
+                total += sum(1 for _ in path.open(encoding="utf-8", errors="ignore"))
+            except OSError:
+                continue
+    return total
 
 
 def generate_stats() -> dict[str, int]:
@@ -96,6 +130,8 @@ def generate_stats() -> dict[str, int]:
         "frontend_pages": count_frontend_pages(),
         "mcp_tools": count_mcp_tools(),
         "tests": count_tests(),
+        "documentation_files": count_documentation_files(),
+        "lines_of_code": count_lines_of_code(),
     }
 
 

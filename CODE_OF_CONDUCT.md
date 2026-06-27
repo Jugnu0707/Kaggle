@@ -14,12 +14,16 @@ We pledge to make participation in Oz AI a harassment-free experience for everyo
 
 ## Enforcement
 
-Report violations to the project maintainers via GitHub Issues (for non-urgent matters) or private security channels described in [SECURITY.md](SECURITY.md).
+Report violations to the project maintainers via GitHub Issues (non-urgent) or private channels described in [SECURITY.md](SECURITY.md).
 
-Maintainers may remove, edit, or reject contributions that violate this code and may ban contributors who engage in unacceptable behavior.
+Maintainers may remove, edit, or reject contributions that violate this code.
 
 ## Attribution
 
-This Code of Conduct is adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.1.
+Adapted from the [Contributor Covenant](https://www.contributor-covenant.org/), version 2.1.
 
-A full version is also available in [.github/CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md).
+Full text: [.github/CODE_OF_CONDUCT.md](.github/CODE_OF_CONDUCT.md)
+
+## Contact
+
+For questions about community standards, open a GitHub issue with the label `community`.

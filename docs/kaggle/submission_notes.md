@@ -188,6 +188,8 @@ open http://localhost:8000/docs
 | Frontend pages | 10 |
 | MCP tools | 5 |
 | Automated tests | 176 |
+| Documentation files | 46 |
+| Lines of code (approx.) | 29,333 |
 
 Regenerate: `python scripts/generate_repo_stats.py`
 
@@ -205,9 +207,12 @@ Regenerate: `python scripts/generate_repo_stats.py`
 | Evaluation report | Complete | `docs/kaggle/evaluation.md` |
 | Limitations | Complete | `docs/kaggle/limitations.md` |
 | Future work | Complete | `docs/kaggle/future_work.md` |
-| Kaggle notebook | **Not started** | Sprint 4 |
-| Demo video | **Not started** | Sprint 4 |
-| Live screenshots | Generated renders | `docs/demo/` |
+| Demo video script | Complete | `docs/demo/demo_script.md` |
+| Final checklist | Complete | `docs/kaggle/final_checklist.md` |
+| Mermaid diagrams | Complete | `docs/diagrams/` |
+| Screenshots (12 views) | Complete | `docs/screenshots/` |
+| Kaggle notebook | **Pending** | Sprint 4 |
+| Demo video recording | **Pending** | Sprint 4 |
 
 ---
 
@@ -220,8 +225,9 @@ Regenerate: `python scripts/generate_repo_stats.py`
 5. Investigation Replay and export
 6. Evaluation dashboard and Settings (ADK/MCP status)
 7. `docs/kaggle/` written materials
-8. `docs/architecture/` diagrams
-9. `cd backend && uv run pytest` — test verification
+8. `docs/diagrams/` and `docs/architecture/` diagrams
+9. `docs/kaggle/final_checklist.md` — submission verification
+10. `cd backend && uv run pytest` — test verification
 
 ---
 

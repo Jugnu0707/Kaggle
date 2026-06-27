@@ -8,9 +8,34 @@
 [![Tests](https://img.shields.io/badge/tests-176-passing-brightgreen.svg)](tests/)
 [![Kaggle Capstone](https://img.shields.io/badge/Kaggle-AI%20Agents%20Capstone-20BEFF.svg)](https://www.kaggle.com/competitions)
 
-**Enterprise Incident Response Platform** · v0.1.0 · Sprint 4 Task 1
+**Enterprise Incident Response Platform** · v0.1.0 · **Submission Ready**
 
 Oz AI is an open-source, multi-agent platform for enterprise security incident response. It combines a FastAPI backend, React dashboard, eight Google ADK specialist agents, Guardian safety validation, MCP operational tools, and an end-to-end investigation workflow — built for the **Kaggle AI Agents Intensive Capstone** (Agents for Business track).
+
+---
+
+## Judge quickstart (6 steps)
+
+```bash
+git clone https://github.com/Jugnu0707/Kaggle.git
+cd Kaggle
+cp .env.example .env
+docker compose up --build
+python scripts/reset_demo.py   # seed 10 incidents, 25 logs, run investigations
+```
+
+| Step | Action | URL |
+|------|--------|-----|
+| 1 | Clone repository | `git clone` above |
+| 2 | Configure environment | `cp .env.example .env` |
+| 3 | Start Docker stack | `docker compose up --build` |
+| 4 | Open dashboard | http://localhost:5173 |
+| 5 | Run investigation | Incidents → **Suspicious PowerShell Execution** → **Investigate** |
+| 6 | Review outputs | All incident tabs + `/evaluation` + Settings (ADK/MCP) |
+
+Optional: `curl http://localhost:8000/api/v1/ai/test` to verify Gemini (requires `GOOGLE_API_KEY`).
+
+Full checklist: [`docs/kaggle/final_checklist.md`](docs/kaggle/final_checklist.md)
 
 ---
 
@@ -21,10 +46,12 @@ Oz AI is an open-source, multi-agent platform for enterprise security incident r
 | API paths | **35** |
 | API operations | **39** |
 | AI agents | **8** |
+| MCP tools | **5** |
 | Database tables | **16** |
 | Frontend pages | **10** |
-| MCP tools | **5** |
 | Automated tests | **176** |
+| Documentation files | **46** |
+| Lines of code (approx.) | **29,333** |
 
 Regenerate: `python scripts/generate_repo_stats.py`
 
@@ -282,18 +309,22 @@ Demo assets: [`docs/demo/`](docs/demo/)
 
 | View | Preview |
 |------|---------|
-| Dashboard | ![Dashboard](docs/demo/dashboard.png) |
-| Incident Details | ![Incident Details](docs/demo/incident-details.png) |
-| Threat Intelligence | ![Threat Intelligence](docs/demo/threat-intelligence.png) |
-| MITRE Mapping | ![MITRE](docs/demo/mitre.png) |
-| Risk Assessment | ![Risk](docs/demo/risk-assessment.png) |
-| Response Plan | ![Response](docs/demo/response-plan.png) |
-| Executive Report | ![Executive Report](docs/demo/executive-report.png) |
-| Guardian | ![Guardian](docs/demo/guardian.png) |
-| Timeline | ![Timeline](docs/demo/timeline.png) |
-| Evaluation | ![Evaluation](docs/demo/evaluation-dashboard.png) |
+| Dashboard | ![Dashboard](docs/screenshots/dashboard.png) |
+| Incident Details | ![Incident Details](docs/screenshots/incident-details.png) |
+| Evidence | ![Evidence](docs/screenshots/evidence.png) |
+| Threat Intelligence | ![Threat Intelligence](docs/screenshots/threat-intelligence.png) |
+| MITRE Mapping | ![MITRE](docs/screenshots/mitre.png) |
+| Risk Assessment | ![Risk](docs/screenshots/risk-assessment.png) |
+| Response Plan | ![Response](docs/screenshots/response-plan.png) |
+| Executive Report | ![Executive Report](docs/screenshots/executive-report.png) |
+| Guardian Audit | ![Guardian](docs/screenshots/guardian.png) |
+| Timeline | ![Timeline](docs/screenshots/timeline.png) |
+| Evaluation Dashboard | ![Evaluation](docs/screenshots/evaluation-dashboard.png) |
+| Investigation Runner | ![Investigation Runner](docs/screenshots/investigation-runner.png) |
 
-Regenerate: `python scripts/generate_assets.py`
+Architecture: [`docs/architecture/architecture.png`](docs/architecture/architecture.png) · Diagrams: [`docs/diagrams/`](docs/diagrams/)
+
+Regenerate: `cd backend && uv run python ../scripts/generate_assets.py`
 
 ---
 
@@ -372,7 +403,9 @@ See [`ROADMAP.md`](ROADMAP.md) for v0.2.0+ plans.
 | [`docs/architecture/`](docs/architecture/) | Diagrams and sequence documentation |
 | [`docs/COMPETITION_ALIGNMENT.md`](docs/COMPETITION_ALIGNMENT.md) | Kaggle requirement mapping |
 | [`docs/07_SUBMISSION_CHECKLIST.md`](docs/07_SUBMISSION_CHECKLIST.md) | Pre-submission checklist |
-| [`docs/REPOSITORY_READINESS_REPORT.md`](docs/REPOSITORY_READINESS_REPORT.md) | Repository audit report |
+| [`docs/kaggle/final_checklist.md`](docs/kaggle/final_checklist.md) | Pre-submission verification |
+| [`docs/SUBMISSION_VERIFICATION_REPORT.md`](docs/SUBMISSION_VERIFICATION_REPORT.md) | Sprint 4 submission audit |
+| [`docs/diagrams/`](docs/diagrams/) | GitHub-renderable Mermaid diagrams |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release history |
 
 ---

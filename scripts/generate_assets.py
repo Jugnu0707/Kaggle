@@ -224,6 +224,17 @@ def generate_screenshots() -> None:
         ],
     )
     screenshot_incident_detail(
+        "Evidence",
+        "evidence.png",
+        [
+            "File type: application_log · Total entries: 7",
+            "Time range: 2026-06-24T08:15:01Z to 2026-06-24T08:15:40Z",
+            "Source: WS-FIN-042 · Detected: PowerShell execution chain",
+            "Sample: ProcessCreate WINWORD.EXE → powershell.exe -EncodedCommand",
+            "Quality: timestamps present · normalization complete",
+        ],
+    )
+    screenshot_incident_detail(
         "Threat Intelligence",
         "threat-intelligence.png",
         [
