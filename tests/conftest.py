@@ -16,6 +16,7 @@ EXPECTED_TABLES = {
     "evidence",
     "incidents",
     "investigation_runs",
+    "investigation_replays",
     "investigations",
     "log_files",
     "mitre_findings",

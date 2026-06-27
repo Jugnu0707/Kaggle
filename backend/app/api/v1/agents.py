@@ -4,16 +4,16 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.schemas.guardian_agent import (
-    GuardianAuditListResponse,
-    GuardianValidateRequest,
-    GuardianValidateResponse,
-)
+from app.schemas.evidence_agent import EvidenceCollectRequest, EvidenceCollectResponse
 from app.schemas.executive_report_agent import (
     ExecutiveReportRequest,
     ExecutiveReportResponse,
 )
-from app.schemas.evidence_agent import EvidenceCollectRequest, EvidenceCollectResponse
+from app.schemas.guardian_agent import (
+    GuardianValidateRequest,
+    GuardianValidateResponse,
+)
+from app.schemas.mitre_agent import MitreMappingRequest, MitreMappingResponse
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
 from app.schemas.response import APIResponse
 from app.schemas.response_agent import ResponsePlanRequest, ResponsePlanResponse
@@ -22,7 +22,6 @@ from app.schemas.threat_intelligence_agent import (
     ThreatIntelligenceRequest,
     ThreatIntelligenceResponse,
 )
-from app.schemas.mitre_agent import MitreMappingRequest, MitreMappingResponse
 from app.services.evidence_agent_service import EvidenceAgentService
 from app.services.executive_report_agent_service import ExecutiveReportAgentService
 from app.services.guardian_agent_service import GuardianAgentService
@@ -30,7 +29,9 @@ from app.services.mitre_agent_service import MitreAgentService
 from app.services.orchestration_service import OrchestrationService
 from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
-from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
+from app.services.threat_intelligence_agent_service import (
+    ThreatIntelligenceAgentService,
+)
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -158,7 +159,9 @@ def get_threat_intelligence_agent_service(
 )
 def enrich_threat_intelligence(
     payload: ThreatIntelligenceRequest,
-    service: ThreatIntelligenceAgentService = Depends(get_threat_intelligence_agent_service),
+    service: ThreatIntelligenceAgentService = Depends(
+        get_threat_intelligence_agent_service
+    ),
 ) -> APIResponse[ThreatIntelligenceResponse]:
     """Extract IOCs and generate a threat intelligence report."""
     result = service.enrich(payload)
@@ -308,7 +311,9 @@ def get_response_agent_service(db: Session = Depends(get_db)) -> ResponseAgentSe
                             "priority": "P2",
                             "containment": ["Isolate affected endpoint"],
                             "eradication": ["Block unauthorized PowerShell execution"],
-                            "recovery": ["Validate endpoint integrity before reconnection"],
+                            "recovery": [
+                                "Validate endpoint integrity before reconnection"
+                            ],
                             "monitoring": ["Monitor for repeated script execution"],
                             "executive_summary": "Fallback response plan for suspicious PowerShell activity.",
                         },

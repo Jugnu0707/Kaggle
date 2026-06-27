@@ -9,7 +9,6 @@ from typing import Any
 from agents.guardian.schemas import GuardianAgentName, ValidationStatus
 from pydantic import BaseModel, ConfigDict, Field
 
-
 AGENT_DISPLAY_NAMES: dict[GuardianAgentName, str] = {
     GuardianAgentName.EVIDENCE: "Evidence Agent",
     GuardianAgentName.THREAT_INTELLIGENCE: "Threat Intelligence Agent",

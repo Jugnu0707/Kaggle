@@ -14,18 +14,20 @@ from app.core.logging import get_logger
 from app.models.agent_execution import AgentExecution
 from app.models.enums import AgentExecutionStatus
 from app.repositories.agent_execution_repository import AgentExecutionRepository
-from app.schemas.executive_report_agent import ExecutiveReportRequest
 from app.schemas.evidence_agent import EvidenceCollectRequest
+from app.schemas.executive_report_agent import ExecutiveReportRequest
 from app.schemas.orchestration import OrchestrateRequest, OrchestrateResponse
-from app.schemas.risk_agent import RiskAssessmentRequest
 from app.schemas.response_agent import ResponsePlanRequest
+from app.schemas.risk_agent import RiskAssessmentRequest
 from app.services.evidence_agent_service import EvidenceAgentService
 from app.services.executive_report_agent_service import ExecutiveReportAgentService
 from app.services.mitre_agent_service import MitreAgentService
 from app.services.orchestration_guardian import run_stage_with_guardian
 from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
-from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
+from app.services.threat_intelligence_agent_service import (
+    ThreatIntelligenceAgentService,
+)
 
 logger = get_logger(__name__)
 
@@ -76,7 +78,9 @@ class OrchestrationService:
                 incident_id=plan.incident_id,
                 workflow_id=plan.workflow_id,
                 agent=GuardianAgentName.THREAT_INTELLIGENCE,
-                run_callable=lambda: ThreatIntelligenceAgentService(self.db).enrich_from_package(
+                run_callable=lambda: ThreatIntelligenceAgentService(
+                    self.db
+                ).enrich_from_package(
                     evidence_result.evidence_package,
                     workflow_id=plan.workflow_id,
                 ),
@@ -165,9 +169,7 @@ class OrchestrationService:
                     else None
                 ),
                 "risk_result": (
-                    risk_result.model_dump()
-                    if risk_result is not None
-                    else None
+                    risk_result.model_dump() if risk_result is not None else None
                 ),
                 "response_result": (
                     response_result.model_dump()

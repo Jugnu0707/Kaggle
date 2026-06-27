@@ -5,22 +5,22 @@ from contextlib import asynccontextmanager
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.ai.runtime import initialize_ai_runtime
 from app.api.v1 import api_v1_router
 from app.core.adk_runtime import initialize_adk_runtime
-from app.ai.runtime import initialize_ai_runtime
 from app.core.config import get_upload_path, settings
 from app.core.evidence_runtime import initialize_evidence_runtime
-from app.core.mcp_runtime import initialize_mcp_runtime
-from app.core.mitre_runtime import initialize_mitre_runtime
-from app.core.guardian_runtime import initialize_guardian_runtime
+from app.core.exceptions import register_exception_handlers
 from app.core.executive_report_runtime import initialize_executive_report_runtime
+from app.core.guardian_runtime import initialize_guardian_runtime
+from app.core.logging import get_logger, setup_logging
+from app.core.mcp_runtime import initialize_mcp_runtime
+from app.core.middleware import RequestLoggingMiddleware
+from app.core.mitre_runtime import initialize_mitre_runtime
+from app.core.openapi import OPENAPI_TAGS
 from app.core.response_runtime import initialize_response_runtime
 from app.core.risk_runtime import initialize_risk_runtime
 from app.core.threat_intelligence_runtime import initialize_threat_intelligence_runtime
-from app.core.exceptions import register_exception_handlers
-from app.core.logging import get_logger, setup_logging
-from app.core.middleware import RequestLoggingMiddleware
-from app.core.openapi import OPENAPI_TAGS
 from app.db.database import init_db
 from app.schemas.response import APIResponse
 

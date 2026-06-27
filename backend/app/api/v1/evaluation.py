@@ -62,8 +62,12 @@ def get_evaluation_overview(
     summary="Get agent evaluation detail",
     description="Return detailed evaluation statistics for a single agent.",
     responses={
-        status.HTTP_200_OK: {"description": "Agent evaluation detail retrieved successfully"},
-        status.HTTP_404_NOT_FOUND: {"description": "Agent evaluation metrics not found"},
+        status.HTTP_200_OK: {
+            "description": "Agent evaluation detail retrieved successfully"
+        },
+        status.HTTP_404_NOT_FOUND: {
+            "description": "Agent evaluation metrics not found"
+        },
     },
 )
 def get_agent_evaluation(

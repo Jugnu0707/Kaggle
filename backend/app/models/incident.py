@@ -14,14 +14,14 @@ from app.models.enums import IncidentStatus, Severity
 
 if TYPE_CHECKING:
     from app.models.evidence import Evidence
+    from app.models.executive_report import ExecutiveReport
+    from app.models.guardian_audit import GuardianAudit
     from app.models.investigation import Investigation
     from app.models.investigation_run import InvestigationRun
     from app.models.log_file import LogFile
     from app.models.mitre_finding import MitreFinding
-    from app.models.risk_assessment import RiskAssessment
-    from app.models.executive_report import ExecutiveReport
-    from app.models.guardian_audit import GuardianAudit
     from app.models.response_plan import ResponsePlan
+    from app.models.risk_assessment import RiskAssessment
     from app.models.threat_intelligence_finding import ThreatIntelligenceFinding
     from app.models.timeline_event import TimelineEvent
 
@@ -102,9 +102,11 @@ class Incident(Base):
         back_populates="incident",
         cascade="all, delete-orphan",
     )
-    threat_intelligence_findings: Mapped[list[ThreatIntelligenceFinding]] = relationship(
-        back_populates="incident",
-        cascade="all, delete-orphan",
+    threat_intelligence_findings: Mapped[list[ThreatIntelligenceFinding]] = (
+        relationship(
+            back_populates="incident",
+            cascade="all, delete-orphan",
+        )
     )
     timeline_events: Mapped[list[TimelineEvent]] = relationship(
         back_populates="incident",

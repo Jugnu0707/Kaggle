@@ -14,6 +14,7 @@ from app.models.enums import InvestigationRunStatus
 
 if TYPE_CHECKING:
     from app.models.incident import Incident
+    from app.models.investigation_replay import InvestigationReplay
 
 
 class InvestigationRun(Base):
@@ -52,3 +53,7 @@ class InvestigationRun(Base):
     overall_result: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     incident: Mapped[Incident] = relationship(back_populates="investigation_runs")
+    replay_steps: Mapped[list[InvestigationReplay]] = relationship(
+        back_populates="investigation_run",
+        order_by="InvestigationReplay.step_number",
+    )

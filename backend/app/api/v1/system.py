@@ -81,7 +81,9 @@ def list_database_tables(db: Session = Depends(get_db)) -> APIResponse[TablesDat
     response_model=APIResponse[MCPStatusData],
     summary="MCP server status",
     description="Return MCP server status and the list of registered tools.",
-    responses={status.HTTP_200_OK: {"description": "MCP status retrieved successfully"}},
+    responses={
+        status.HTTP_200_OK: {"description": "MCP status retrieved successfully"}
+    },
 )
 def get_mcp_server_status() -> APIResponse[MCPStatusData]:
     """Return MCP server status and registered tool inventory."""

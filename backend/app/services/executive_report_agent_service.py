@@ -63,7 +63,9 @@ class ExecutiveReportAgentService:
             result=result,
         )
 
-    def get_latest_report(self, incident_id: uuid.UUID) -> ExecutiveReportRecordResponse:
+    def get_latest_report(
+        self, incident_id: uuid.UUID
+    ) -> ExecutiveReportRecordResponse:
         """Return the latest persisted executive report for an incident."""
         incident = self.incident_repository.get_by_id(incident_id)
         if incident is None:

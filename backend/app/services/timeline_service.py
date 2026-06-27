@@ -14,7 +14,11 @@ from app.repositories.incident_repository import IncidentRepository
 from app.repositories.timeline_event_repository import TimelineEventRepository
 from app.services.timeline.engine import TimelineEngine
 from app.services.timeline.models import ProcessedTimelineEvent
-from app.services.timeline.schemas import TimelineEventResponse, TimelineResponse, timeline_to_markdown
+from app.services.timeline.schemas import (
+    TimelineEventResponse,
+    TimelineResponse,
+    timeline_to_markdown,
+)
 
 logger = get_logger(__name__)
 
@@ -46,7 +50,9 @@ class TimelineService:
             investigation_summary=result.investigation_summary,
         )
 
-    def export_timeline(self, incident_id: uuid.UUID, export_format: str) -> tuple[str, str, str]:
+    def export_timeline(
+        self, incident_id: uuid.UUID, export_format: str
+    ) -> tuple[str, str, str]:
         """Return export payload, media type, and filename suffix."""
         timeline = self.get_timeline(incident_id)
         normalized_format = export_format.lower().strip()

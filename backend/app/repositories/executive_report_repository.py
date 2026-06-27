@@ -25,7 +25,9 @@ class ExecutiveReportRepository:
         stmt = delete(ExecutiveReport).where(ExecutiveReport.incident_id == incident_id)
         self.db.execute(stmt)
 
-    def get_latest_by_incident_id(self, incident_id: uuid.UUID) -> ExecutiveReport | None:
+    def get_latest_by_incident_id(
+        self, incident_id: uuid.UUID
+    ) -> ExecutiveReport | None:
         """Return the most recent executive report for an incident."""
         stmt = (
             select(ExecutiveReport)

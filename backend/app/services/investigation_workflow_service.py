@@ -17,7 +17,12 @@ from app.core.adk_runtime import get_coordinator
 from app.core.exceptions import NotFoundException
 from app.core.logging import get_logger
 from app.models.agent_execution import AgentExecution
-from app.models.enums import AgentExecutionStatus, IncidentStatus, InvestigationRunStatus, InvestigationStatus
+from app.models.enums import (
+    AgentExecutionStatus,
+    IncidentStatus,
+    InvestigationRunStatus,
+    InvestigationStatus,
+)
 from app.models.investigation import Investigation
 from app.models.investigation_run import InvestigationRun
 from app.repositories.agent_execution_repository import AgentExecutionRepository
@@ -26,20 +31,36 @@ from app.repositories.incident_repository import IncidentRepository
 from app.repositories.investigation_run_repository import InvestigationRunRepository
 from app.repositories.log_repository import LogRepository
 from app.repositories.timeline_event_repository import TimelineEventRepository
-from app.schemas.executive_report_agent import ExecutiveReportRequest
 from app.schemas.evidence_agent import EvidenceCollectRequest
+from app.schemas.executive_report_agent import ExecutiveReportRequest
 from app.schemas.guardian_agent import GuardianValidateResponse
-from app.schemas.investigation import InvestigationPackageResponse, InvestigationStageResult
-from app.schemas.risk_agent import RiskAssessmentRequest
+from app.schemas.investigation import (
+    InvestigationPackageResponse,
+    InvestigationStageResult,
+)
 from app.schemas.response_agent import ResponsePlanRequest
+from app.schemas.risk_agent import RiskAssessmentRequest
 from app.services.evaluation_service import EvaluationService
 from app.services.evidence_agent_service import EvidenceAgentService
 from app.services.executive_report_agent_service import ExecutiveReportAgentService
+from app.services.investigation_replay_service import InvestigationReplayService
 from app.services.mitre_agent_service import MitreAgentService
 from app.services.orchestration_guardian import run_stage_with_guardian
+from app.services.replay_builder import (
+    ReplayStepRecord,
+    build_evidence_replay,
+    build_executive_report_replay,
+    build_mitre_replay,
+    build_response_replay,
+    build_risk_replay,
+    build_simple_replay,
+    build_threat_intel_replay,
+)
 from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
-from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
+from app.services.threat_intelligence_agent_service import (
+    ThreatIntelligenceAgentService,
+)
 from app.services.timeline_service import TimelineService
 
 logger = get_logger(__name__)
@@ -73,6 +94,9 @@ class _WorkflowState:
     timeline_id: uuid.UUID | None = None
     evaluation_score: int | None = None
     evidence_result: Any = None
+    replay_steps: list[ReplayStepRecord] = field(default_factory=list)
+    next_step_number: int = 1
+    guardian_validations_detail: list[str] = field(default_factory=list)
 
 
 class InvestigationWorkflowService:
@@ -88,6 +112,7 @@ class InvestigationWorkflowService:
         self.timeline_repository = TimelineEventRepository(db)
         self.evaluation_service = EvaluationService(db)
         self.timeline_service = TimelineService(db)
+        self.replay_service = InvestigationReplayService(db)
 
     def run(self, incident_id: uuid.UUID) -> InvestigationPackageResponse:
         """Execute the end-to-end investigation workflow for an incident."""
@@ -150,7 +175,9 @@ class InvestigationWorkflowService:
                     incident_id=incident_id,
                     workflow_id=execution_id,
                     state=state,
-                    run_callable=lambda: ThreatIntelligenceAgentService(self.db).enrich_from_package(
+                    run_callable=lambda: ThreatIntelligenceAgentService(
+                        self.db
+                    ).enrich_from_package(
                         state.evidence_result.evidence_package,
                         workflow_id=execution_id,
                     ),
@@ -229,8 +256,35 @@ class InvestigationWorkflowService:
         elif state.guardian_failures > 0:
             state.agents_failed.append(GUARDIAN_STAGE_NAME)
 
+        guardian_started = datetime.now(UTC)
+        self._append_replay(
+            state,
+            build_simple_replay(
+                step_number=self._allocate_step(state),
+                agent_name="Guardian Agent",
+                started_at=guardian_started,
+                completed_at=datetime.now(UTC),
+                duration_ms=0,
+                success=state.guardian_failures == 0,
+                decision=(
+                    f"Guardian validated {state.guardian_validations} agent outputs"
+                    if state.guardian_failures == 0
+                    else f"Guardian rejected {state.guardian_failures} agent outputs"
+                ),
+                reason="; ".join(state.guardian_validations_detail)
+                or ("All specialist outputs passed safety and confidence checks."),
+                outputs={
+                    "validations": state.guardian_validations,
+                    "failures": state.guardian_failures,
+                },
+                confidence=99 if state.guardian_failures == 0 else 60,
+            ),
+        )
+
         self._run_timeline_stage(incident_id, execution_id, state)
         self._run_evaluation_stage(state)
+
+        self.replay_service.persist_steps(execution_id, state.replay_steps)
 
         duration_ms = int((time.perf_counter() - timer_start) * 1000)
         completed_at = datetime.now(UTC)
@@ -265,9 +319,11 @@ class InvestigationWorkflowService:
             investigation.investigation_status = (
                 InvestigationStatus.COMPLETED
                 if run_status == InvestigationRunStatus.COMPLETED
-                else InvestigationStatus.FAILED
-                if run_status == InvestigationRunStatus.FAILED
-                else InvestigationStatus.RUNNING
+                else (
+                    InvestigationStatus.FAILED
+                    if run_status == InvestigationRunStatus.FAILED
+                    else InvestigationStatus.RUNNING
+                )
             )
             investigation.completed_at = completed_at
             investigation.duration_seconds = duration_ms // 1000
@@ -320,8 +376,14 @@ class InvestigationWorkflowService:
             agents_executed=list(overall.get("agents_executed", [])),
             agents_completed=agents_completed,
             agents_failed=agents_failed,
-            report_id=uuid.UUID(overall["report_id"]) if overall.get("report_id") else None,
-            timeline_id=uuid.UUID(overall["timeline_id"]) if overall.get("timeline_id") else None,
+            report_id=(
+                uuid.UUID(overall["report_id"]) if overall.get("report_id") else None
+            ),
+            timeline_id=(
+                uuid.UUID(overall["timeline_id"])
+                if overall.get("timeline_id")
+                else None
+            ),
             evaluation_score=overall.get("evaluation_score"),
             started_at=run.started_at,
             completed_at=run.completed_at,
@@ -336,12 +398,14 @@ class InvestigationWorkflowService:
         state: _WorkflowState,
     ) -> None:
         stage_start = time.perf_counter()
+        started_at = datetime.now(UTC)
         try:
             coordinator = get_coordinator()
             plan = coordinator.orchestrate(
                 CoordinatorInput(incident_id=incident_id, log_id=log_id),
                 self.db,
             )
+            completed_at = datetime.now(UTC)
             duration_ms = int((time.perf_counter() - stage_start) * 1000)
             self.execution_repository.create(
                 AgentExecution(
@@ -349,8 +413,8 @@ class InvestigationWorkflowService:
                     workflow_id=workflow_id,
                     agent_name=COORDINATOR_AGENT_NAME,
                     status=AgentExecutionStatus.COMPLETED,
-                    started_at=datetime.now(UTC),
-                    completed_at=datetime.now(UTC),
+                    started_at=started_at,
+                    completed_at=completed_at,
                     duration_ms=duration_ms,
                     message=f"Coordinator plan accepted with {len(plan.workflow)} stages",
                 )
@@ -362,12 +426,32 @@ class InvestigationWorkflowService:
                     duration_ms=duration_ms,
                 )
             )
+            self._append_replay(
+                state,
+                build_simple_replay(
+                    step_number=self._allocate_step(state),
+                    agent_name="Investigation Coordinator",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    duration_ms=duration_ms,
+                    success=True,
+                    decision=f"Investigation plan accepted with {len(plan.workflow)} stages",
+                    reason="Coordinator orchestration defined the specialist agent execution order.",
+                    inputs={
+                        "incident_id": str(incident_id),
+                        "log_file_id": str(log_id) if log_id else None,
+                    },
+                    outputs={"workflow_stages": len(plan.workflow)},
+                    confidence=100,
+                ),
+            )
             logger.info(
                 "Coordinator stage completed: execution_id=%s duration_ms=%s",
                 workflow_id,
                 duration_ms,
             )
         except Exception as exc:
+            completed_at = datetime.now(UTC)
             duration_ms = int((time.perf_counter() - stage_start) * 1000)
             state.stages.append(
                 InvestigationStageResult(
@@ -376,6 +460,19 @@ class InvestigationWorkflowService:
                     duration_ms=duration_ms,
                     error=str(exc),
                 )
+            )
+            self._append_replay(
+                state,
+                build_simple_replay(
+                    step_number=self._allocate_step(state),
+                    agent_name="Investigation Coordinator",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    duration_ms=duration_ms,
+                    success=False,
+                    decision="Investigation planning failed",
+                    reason=str(exc),
+                ),
             )
             logger.exception("Coordinator stage failed: execution_id=%s", workflow_id)
 
@@ -390,6 +487,7 @@ class InvestigationWorkflowService:
         run_callable,
     ) -> Any | None:
         stage_start = time.perf_counter()
+        started_at = datetime.now(UTC)
         try:
             result, validation = run_stage_with_guardian(
                 self.db,
@@ -398,6 +496,7 @@ class InvestigationWorkflowService:
                 agent=guardian_agent,
                 run_callable=run_callable,
             )
+            completed_at = datetime.now(UTC)
             duration_ms = int((time.perf_counter() - stage_start) * 1000)
             fallback_used = self._detect_fallback(result, validation)
             guardian_ok = self._record_guardian_validation(validation, state)
@@ -409,8 +508,23 @@ class InvestigationWorkflowService:
                     success=success,
                     duration_ms=duration_ms,
                     fallback_used=fallback_used,
-                    error=None if success else "Guardian validation did not approve output",
+                    error=(
+                        None
+                        if success
+                        else "Guardian validation did not approve output"
+                    ),
                 )
+            )
+            self._record_agent_replay(
+                state=state,
+                display_name=display_name,
+                incident_id=incident_id,
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=duration_ms,
+                success=success,
+                fallback_used=fallback_used,
+                result=result,
             )
             if success:
                 state.agents_completed.append(display_name)
@@ -431,6 +545,7 @@ class InvestigationWorkflowService:
             )
             return None
         except Exception as exc:
+            completed_at = datetime.now(UTC)
             duration_ms = int((time.perf_counter() - stage_start) * 1000)
             state.agents_failed.append(display_name)
             state.stages.append(
@@ -440,6 +555,18 @@ class InvestigationWorkflowService:
                     duration_ms=duration_ms,
                     error=str(exc),
                 )
+            )
+            self._record_agent_replay(
+                state=state,
+                display_name=display_name,
+                incident_id=incident_id,
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=duration_ms,
+                success=False,
+                fallback_used=False,
+                result=None,
+                error=str(exc),
             )
             logger.exception(
                 "Stage failed: execution_id=%s agent=%s",
@@ -455,10 +582,12 @@ class InvestigationWorkflowService:
         state: _WorkflowState,
     ) -> None:
         stage_start = time.perf_counter()
+        started_at = datetime.now(UTC)
         try:
             timeline = self.timeline_service.get_timeline(incident_id)
             events = self.timeline_repository.list_by_incident_id(incident_id)
             state.timeline_id = events[0].id if events else workflow_id
+            completed_at = datetime.now(UTC)
             duration_ms = int((time.perf_counter() - stage_start) * 1000)
             state.agents_completed.append(TIMELINE_STAGE_NAME)
             state.stages.append(
@@ -468,6 +597,22 @@ class InvestigationWorkflowService:
                     duration_ms=duration_ms,
                 )
             )
+            self._append_replay(
+                state,
+                build_simple_replay(
+                    step_number=self._allocate_step(state),
+                    agent_name="Timeline Engine",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    duration_ms=duration_ms,
+                    success=True,
+                    decision=f"Timeline generated with {timeline.total_events} events",
+                    reason="Investigation events were normalized, ordered, and deduplicated.",
+                    inputs={"incident_id": str(incident_id)},
+                    outputs={"total_events": timeline.total_events},
+                    confidence=100,
+                ),
+            )
             logger.info(
                 "Timeline stage completed: execution_id=%s events=%s duration_ms=%s",
                 workflow_id,
@@ -475,6 +620,7 @@ class InvestigationWorkflowService:
                 duration_ms,
             )
         except Exception as exc:
+            completed_at = datetime.now(UTC)
             duration_ms = int((time.perf_counter() - stage_start) * 1000)
             state.agents_failed.append(TIMELINE_STAGE_NAME)
             state.stages.append(
@@ -485,13 +631,28 @@ class InvestigationWorkflowService:
                     error=str(exc),
                 )
             )
+            self._append_replay(
+                state,
+                build_simple_replay(
+                    step_number=self._allocate_step(state),
+                    agent_name="Timeline Engine",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    duration_ms=duration_ms,
+                    success=False,
+                    decision="Timeline generation failed",
+                    reason=str(exc),
+                ),
+            )
             logger.exception("Timeline stage failed: execution_id=%s", workflow_id)
 
     def _run_evaluation_stage(self, state: _WorkflowState) -> None:
         stage_start = time.perf_counter()
+        started_at = datetime.now(UTC)
         try:
             overview = self.evaluation_service.get_overview()
             state.evaluation_score = overview.overall_score
+            completed_at = datetime.now(UTC)
             duration_ms = int((time.perf_counter() - stage_start) * 1000)
             state.agents_completed.append(EVALUATION_STAGE_NAME)
             state.stages.append(
@@ -501,12 +662,28 @@ class InvestigationWorkflowService:
                     duration_ms=duration_ms,
                 )
             )
+            self._append_replay(
+                state,
+                build_simple_replay(
+                    step_number=self._allocate_step(state),
+                    agent_name="Evaluation Engine",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    duration_ms=duration_ms,
+                    success=True,
+                    decision=f"Evaluation score computed: {overview.overall_score}",
+                    reason="Agent benchmarks and investigation metrics were aggregated.",
+                    outputs={"overall_score": overview.overall_score},
+                    confidence=overview.overall_score,
+                ),
+            )
             logger.info(
                 "Evaluation stage completed: score=%s duration_ms=%s",
                 state.evaluation_score,
                 duration_ms,
             )
         except Exception as exc:
+            completed_at = datetime.now(UTC)
             duration_ms = int((time.perf_counter() - stage_start) * 1000)
             state.agents_failed.append(EVALUATION_STAGE_NAME)
             state.stages.append(
@@ -517,6 +694,19 @@ class InvestigationWorkflowService:
                     error=str(exc),
                 )
             )
+            self._append_replay(
+                state,
+                build_simple_replay(
+                    step_number=self._allocate_step(state),
+                    agent_name="Evaluation Engine",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    duration_ms=duration_ms,
+                    success=False,
+                    decision="Evaluation failed",
+                    reason=str(exc),
+                ),
+            )
             logger.exception("Evaluation stage failed")
 
     def _record_guardian_validation(
@@ -525,12 +715,18 @@ class InvestigationWorkflowService:
         state: _WorkflowState,
     ) -> bool:
         state.guardian_validations += 1
+        detail = f"status={validation.status.value}"
+        if validation.issues:
+            detail += f" issues={len(validation.issues)}"
+        state.guardian_validations_detail.append(detail)
         if validation.status == ValidationStatus.REJECTED:
             state.guardian_failures += 1
             return False
         return True
 
-    def _detect_fallback(self, result: Any, validation: GuardianValidateResponse) -> bool:
+    def _detect_fallback(
+        self, result: Any, validation: GuardianValidateResponse
+    ) -> bool:
         if validation.fallback_triggered:
             return True
         if hasattr(result, "source"):
@@ -571,6 +767,134 @@ class InvestigationWorkflowService:
                 error=reason,
             )
         )
+        started_at = datetime.now(UTC)
+        agent_label = {
+            "Evidence": "Evidence Agent",
+            "Threat Intelligence": "Threat Intelligence Agent",
+            "MITRE": "MITRE Mapping Agent",
+        }.get(display_name, display_name)
+        self._append_replay(
+            state,
+            build_simple_replay(
+                step_number=self._allocate_step(state),
+                agent_name=agent_label,
+                started_at=started_at,
+                completed_at=started_at,
+                duration_ms=0,
+                success=False,
+                decision=f"{display_name} skipped",
+                reason=reason,
+                skipped=True,
+            ),
+        )
+
+    def _allocate_step(self, state: _WorkflowState) -> int:
+        step = state.next_step_number
+        state.next_step_number += 1
+        return step
+
+    def _append_replay(self, state: _WorkflowState, record: ReplayStepRecord) -> None:
+        state.replay_steps.append(record)
+
+    def _record_agent_replay(
+        self,
+        *,
+        state: _WorkflowState,
+        display_name: str,
+        incident_id: uuid.UUID,
+        started_at: datetime,
+        completed_at: datetime,
+        duration_ms: int,
+        success: bool,
+        fallback_used: bool,
+        result: Any,
+        error: str | None = None,
+    ) -> None:
+        step_number = self._allocate_step(state)
+        incident_str = str(incident_id)
+
+        if display_name == "Evidence":
+            log_file = self.log_repository.get_latest_for_incident(incident_id)
+            log_id = str(log_file.id) if log_file else None
+            record = build_evidence_replay(
+                step_number=step_number,
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=duration_ms,
+                success=success,
+                fallback_used=fallback_used,
+                result=result,
+                log_file_id=log_id,
+                incident_id=incident_str,
+            )
+        elif display_name == "Threat Intelligence":
+            record = build_threat_intel_replay(
+                step_number=step_number,
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=duration_ms,
+                success=success,
+                fallback_used=fallback_used,
+                result=result,
+                incident_id=incident_str,
+            )
+        elif display_name == "MITRE":
+            record = build_mitre_replay(
+                step_number=step_number,
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=duration_ms,
+                success=success,
+                fallback_used=fallback_used,
+                result=result,
+                incident_id=incident_str,
+            )
+        elif display_name == "Risk":
+            record = build_risk_replay(
+                step_number=step_number,
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=duration_ms,
+                success=success,
+                fallback_used=fallback_used,
+                result=result,
+                incident_id=incident_str,
+            )
+        elif display_name == "Response":
+            record = build_response_replay(
+                step_number=step_number,
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=duration_ms,
+                success=success,
+                fallback_used=fallback_used,
+                result=result,
+                incident_id=incident_str,
+            )
+        elif display_name == "Executive Report":
+            record = build_executive_report_replay(
+                step_number=step_number,
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=duration_ms,
+                success=success,
+                fallback_used=fallback_used,
+                result=result,
+                incident_id=incident_str,
+            )
+        else:
+            record = build_simple_replay(
+                step_number=step_number,
+                agent_name=display_name,
+                started_at=started_at,
+                completed_at=completed_at,
+                duration_ms=duration_ms,
+                success=success,
+                decision=error or f"{display_name} completed",
+                reason=error or "Stage execution finished.",
+                fallback_used=fallback_used,
+            )
+        self._append_replay(state, record)
 
     def _ensure_investigation_record(
         self,

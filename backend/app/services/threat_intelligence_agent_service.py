@@ -7,7 +7,10 @@ import uuid
 from datetime import UTC, datetime
 
 from agents.evidence.models import EvidencePackage
-from agents.threat_intelligence.models import ThreatIntelligenceInput, ThreatIntelligenceResult
+from agents.threat_intelligence.models import (
+    ThreatIntelligenceInput,
+    ThreatIntelligenceResult,
+)
 from agents.threat_intelligence.service import ThreatIntelligenceService
 from sqlalchemy.orm import Session
 
@@ -16,7 +19,9 @@ from app.core.logging import get_logger
 from app.core.threat_intelligence_runtime import get_threat_intelligence_agent
 from app.models.agent_execution import AgentExecution
 from app.models.enums import AgentExecutionStatus
-from app.models.threat_intelligence_finding import ThreatIntelligenceFinding as ThreatIntelligenceFindingORM
+from app.models.threat_intelligence_finding import (
+    ThreatIntelligenceFinding as ThreatIntelligenceFindingORM,
+)
 from app.repositories.agent_execution_repository import AgentExecutionRepository
 from app.repositories.incident_repository import IncidentRepository
 from app.repositories.threat_intelligence_finding_repository import (
@@ -43,7 +48,9 @@ class ThreatIntelligenceAgentService:
         self.finding_repository = ThreatIntelligenceFindingRepository(db)
         self.incident_repository = IncidentRepository(db)
 
-    def list_findings(self, incident_id: uuid.UUID) -> ThreatIntelligenceFindingListResponse:
+    def list_findings(
+        self, incident_id: uuid.UUID
+    ) -> ThreatIntelligenceFindingListResponse:
         """Return persisted threat intelligence findings for an incident."""
         incident = self.incident_repository.get_by_id(incident_id)
         if incident is None:

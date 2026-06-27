@@ -9,6 +9,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { EvaluationPage } from "./pages/EvaluationPage";
 import { IncidentDetailPage } from "./pages/IncidentDetailPage";
 import { IncidentsPage } from "./pages/IncidentsPage";
+import { InvestigationReplayPage } from "./pages/InvestigationReplayPage";
 import { InvestigationRunnerPage } from "./pages/InvestigationRunnerPage";
 import { LogUploadPage } from "./pages/LogUploadPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -32,6 +33,7 @@ function AppShell() {
           <Route index element={<DashboardPage />} />
           <Route path="incidents" element={<IncidentsPage />} />
           <Route path="incidents/:id/investigate" element={<InvestigationRunnerPage />} />
+          <Route path="investigations/:runId/replay" element={<InvestigationReplayPage />} />
           <Route path="incidents/:id" element={<IncidentDetailPage />} />
           <Route path="logs" element={<LogUploadPage />} />
           <Route path="reports" element={<ReportsPage />} />

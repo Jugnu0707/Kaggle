@@ -55,3 +55,12 @@ class AgentExecutionStatus(str, Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+
+
+class ReplayStepStatus(str, Enum):
+    """Investigation replay step lifecycle status."""
+
+    COMPLETED = "completed"
+    RUNNING = "running"
+    SKIPPED = "skipped"
+    FAILED = "failed"

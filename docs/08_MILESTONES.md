@@ -45,7 +45,7 @@
 | AI agents | 8 |
 | MCP tools (registered) | 5 |
 | Frontend routes | 9 |
-| Tests (`tests/` + `evaluation/tests/` + agent tests) | **153** collected |
+| Tests (`tests/` + `evaluation/tests/` + agent tests) | **171** collected |
 
 ---
 

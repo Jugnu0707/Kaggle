@@ -16,15 +16,38 @@ TIMESTAMP_PATTERNS: tuple[re.Pattern[str], ...] = (
 )
 
 EVENT_TYPE_RULES: tuple[tuple[re.Pattern[str], TimelineEventType], ...] = (
-    (re.compile(r"powershell|scriptblock|encodedcommand", re.I), TimelineEventType.POWERSHELL),
-    (re.compile(r"processcreate|processterminate|process=", re.I), TimelineEventType.PROCESS_EXECUTION),
+    (
+        re.compile(r"powershell|scriptblock|encodedcommand", re.I),
+        TimelineEventType.POWERSHELL,
+    ),
+    (
+        re.compile(r"processcreate|processterminate|process=", re.I),
+        TimelineEventType.PROCESS_EXECUTION,
+    ),
     (re.compile(r"networkconnect|dest=|protocol=", re.I), TimelineEventType.NETWORK),
-    (re.compile(r"logon|4625|4624|4771|4723|4740", re.I), TimelineEventType.AUTHENTICATION),
-    (re.compile(r"filecreate|filemodify|filedelete|fim|massrename|massencrypt", re.I), TimelineEventType.FILE),
+    (
+        re.compile(r"logon|4625|4624|4771|4723|4740", re.I),
+        TimelineEventType.AUTHENTICATION,
+    ),
+    (
+        re.compile(
+            r"filecreate|filemodify|filedelete|fim|massrename|massencrypt", re.I
+        ),
+        TimelineEventType.FILE,
+    ),
     (re.compile(r"registryset|registry", re.I), TimelineEventType.REGISTRY),
-    (re.compile(r"edralert|defenderalert|defenderquarantine|amsi_scan", re.I), TimelineEventType.EDR),
-    (re.compile(r"firewall|5152|5157|block|drop|denied", re.I), TimelineEventType.FIREWALL),
-    (re.compile(r"alert|defenderalert|incidentescalation", re.I), TimelineEventType.ALERT),
+    (
+        re.compile(r"edralert|defenderalert|defenderquarantine|amsi_scan", re.I),
+        TimelineEventType.EDR,
+    ),
+    (
+        re.compile(r"firewall|5152|5157|block|drop|denied", re.I),
+        TimelineEventType.FIREWALL,
+    ),
+    (
+        re.compile(r"alert|defenderalert|incidentescalation", re.I),
+        TimelineEventType.ALERT,
+    ),
     (re.compile(r"upload|user action|analyst=", re.I), TimelineEventType.USER_ACTION),
 )
 
@@ -76,7 +99,9 @@ def normalize_timestamp_string(value: str) -> datetime | None:
                 continue
 
     try:
-        parsed = datetime.fromisoformat(candidate.replace(" ", "T", 1) if " " in candidate else candidate)
+        parsed = datetime.fromisoformat(
+            candidate.replace(" ", "T", 1) if " " in candidate else candidate
+        )
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=UTC)
         return parsed.astimezone(UTC)

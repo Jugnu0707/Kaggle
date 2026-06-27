@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from agents.guardian.schemas import GuardianValidateInput, ValidationStatus
+from agents.guardian.schemas import GuardianValidateInput
 from agents.guardian.service import GuardianService
 from sqlalchemy.orm import Session
 
@@ -56,7 +56,9 @@ class GuardianAgentService:
                 retry_attempt=request.retry_attempt,
             )
         )
-        action_taken = ", ".join(result.actions_taken) if result.actions_taken else "none"
+        action_taken = (
+            ", ".join(result.actions_taken) if result.actions_taken else "none"
+        )
         audit = GuardianAudit(
             incident_id=request.incident_id,
             agent_name=AGENT_DISPLAY_NAMES[request.agent],
@@ -88,5 +90,7 @@ class GuardianAgentService:
             raise NotFoundException("Incident not found")
 
         records = self.audit_repository.list_by_incident_id(incident_id)
-        items = [GuardianAuditRecordResponse.model_validate(record) for record in records]
+        items = [
+            GuardianAuditRecordResponse.model_validate(record) for record in records
+        ]
         return GuardianAuditListResponse(items=items, total=len(items))

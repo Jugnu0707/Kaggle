@@ -317,6 +317,12 @@ export function InvestigationRunnerPage() {
           </div>
           <div className="mt-4 flex flex-wrap gap-3 text-sm">
             <Link
+              to={`/investigations/${result.execution_id}/replay`}
+              className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+            >
+              Replay investigation
+            </Link>
+            <Link
               to={`/incidents/${id}`}
               className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
             >

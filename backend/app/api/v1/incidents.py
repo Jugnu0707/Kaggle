@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.models.enums import IncidentStatus, Severity
-from app.schemas.guardian_agent import GuardianAuditListResponse
 from app.schemas.executive_report_agent import ExecutiveReportRecordResponse
+from app.schemas.guardian_agent import GuardianAuditListResponse
 from app.schemas.incident import (
     IncidentCreate,
     IncidentDetailResponse,
@@ -17,18 +17,20 @@ from app.schemas.incident import (
     IncidentUpdate,
 )
 from app.schemas.mitre_agent import MitreFindingListResponse
+from app.schemas.response import APIResponse
 from app.schemas.response_agent import ResponsePlanRecordResponse
 from app.schemas.risk_agent import RiskAssessmentRecordResponse
 from app.schemas.threat_intelligence_agent import ThreatIntelligenceFindingListResponse
-from app.schemas.response import APIResponse
-from app.services.timeline.schemas import TimelineResponse
 from app.services.executive_report_agent_service import ExecutiveReportAgentService
 from app.services.guardian_agent_service import GuardianAgentService
 from app.services.incident_service import IncidentService
 from app.services.mitre_agent_service import MitreAgentService
 from app.services.response_agent_service import ResponseAgentService
 from app.services.risk_agent_service import RiskAgentService
-from app.services.threat_intelligence_agent_service import ThreatIntelligenceAgentService
+from app.services.threat_intelligence_agent_service import (
+    ThreatIntelligenceAgentService,
+)
+from app.services.timeline.schemas import TimelineResponse
 from app.services.timeline_service import TimelineService
 
 router = APIRouter(prefix="/incidents", tags=["incidents"])
@@ -204,7 +206,9 @@ def get_incident_mitre_mappings(
 )
 def get_incident_threat_intelligence(
     incident_id: uuid.UUID,
-    service: ThreatIntelligenceAgentService = Depends(get_threat_intelligence_agent_service),
+    service: ThreatIntelligenceAgentService = Depends(
+        get_threat_intelligence_agent_service
+    ),
 ) -> APIResponse[ThreatIntelligenceFindingListResponse]:
     """Return threat intelligence findings for an incident."""
     findings = service.list_findings(incident_id)

@@ -62,7 +62,9 @@ class RiskAgentService:
             result=result,
         )
 
-    def get_latest_assessment(self, incident_id: uuid.UUID) -> RiskAssessmentRecordResponse:
+    def get_latest_assessment(
+        self, incident_id: uuid.UUID
+    ) -> RiskAssessmentRecordResponse:
         """Return the latest persisted risk assessment for an incident."""
         incident = self.incident_repository.get_by_id(incident_id)
         if incident is None:

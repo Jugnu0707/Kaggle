@@ -32,7 +32,9 @@ class GeminiService:
         model = provider.get_model()
 
         if not provider.has_api_key():
-            logger.warning("Gemini health check skipped: GOOGLE_API_KEY is not configured")
+            logger.warning(
+                "Gemini health check skipped: GOOGLE_API_KEY is not configured"
+            )
             return GeminiHealthResult(
                 connected=False,
                 error="GOOGLE_API_KEY is not configured",

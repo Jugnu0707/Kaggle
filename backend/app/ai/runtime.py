@@ -5,6 +5,7 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from mcp.registry import ToolResult, get_registry
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -14,7 +15,6 @@ from app.ai.registry import AgentRegistry, build_default_agent_registry
 from app.ai.session import ADKSession, SessionManager
 from app.core.adk_runtime import get_adk_status, verify_adk_installed
 from app.core.logging import get_logger
-from mcp.registry import ToolResult, get_registry
 
 logger = get_logger(__name__)
 
@@ -116,7 +116,9 @@ class AIRuntime:
             "tool_failure_count": metrics.tool_failure_count,
             "total_mcp_latency_ms": round(metrics.total_mcp_latency_ms, 2),
             "adk_session_count": metrics.adk_session_count,
-            "total_adk_session_duration_ms": round(metrics.total_adk_session_duration_ms, 2),
+            "total_adk_session_duration_ms": round(
+                metrics.total_adk_session_duration_ms, 2
+            ),
             "mean_adk_session_duration_ms": round(mean_session_ms, 2),
         }
 

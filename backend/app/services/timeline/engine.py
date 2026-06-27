@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 import uuid
 from collections import Counter
-from datetime import UTC, datetime
+from datetime import UTC
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -13,7 +13,6 @@ from sqlalchemy.orm import Session, selectinload
 from app.core.exceptions import NotFoundException
 from app.core.logging import get_logger
 from app.models.incident import Incident
-from app.services.timeline.models import ProcessedTimelineEvent
 from app.repositories.incident_repository import IncidentRepository
 from app.services.timeline.models import (
     ProcessedTimelineEvent,
@@ -268,7 +267,9 @@ class TimelineEngine:
                 )
         return events
 
-    def _normalize_timestamps(self, events: list[RawTimelineEvent]) -> list[RawTimelineEvent]:
+    def _normalize_timestamps(
+        self, events: list[RawTimelineEvent]
+    ) -> list[RawTimelineEvent]:
         normalized: list[RawTimelineEvent] = []
         for event in events:
             timestamp = event.timestamp
@@ -297,7 +298,9 @@ class TimelineEngine:
 
         return unique, duplicates_removed
 
-    def _sort_chronologically(self, events: list[RawTimelineEvent]) -> list[RawTimelineEvent]:
+    def _sort_chronologically(
+        self, events: list[RawTimelineEvent]
+    ) -> list[RawTimelineEvent]:
         return sorted(
             events,
             key=lambda event: (
@@ -307,7 +310,9 @@ class TimelineEngine:
             ),
         )
 
-    def _assign_sequence(self, events: list[RawTimelineEvent]) -> list[ProcessedTimelineEvent]:
+    def _assign_sequence(
+        self, events: list[RawTimelineEvent]
+    ) -> list[ProcessedTimelineEvent]:
         processed: list[ProcessedTimelineEvent] = []
         for index, event in enumerate(events, start=1):
             processed.append(
@@ -338,7 +343,8 @@ class TimelineEngine:
 
         type_counts = Counter(event.event_type.value for event in events)
         type_summary = ", ".join(
-            f"{event_type} ({count})" for event_type, count in sorted(type_counts.items())
+            f"{event_type} ({count})"
+            for event_type, count in sorted(type_counts.items())
         )
         severities = [event.severity for event in events]
         highest_severity = self._highest_severity(severities)

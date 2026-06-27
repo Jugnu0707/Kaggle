@@ -27,7 +27,9 @@ class ThreatIntelligenceFindingRepository:
         )
         self.db.execute(stmt)
 
-    def list_by_incident_id(self, incident_id: uuid.UUID) -> list[ThreatIntelligenceFinding]:
+    def list_by_incident_id(
+        self, incident_id: uuid.UUID
+    ) -> list[ThreatIntelligenceFinding]:
         """Return findings for an incident ordered by indicator."""
         stmt = (
             select(ThreatIntelligenceFinding)

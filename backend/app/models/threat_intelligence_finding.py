@@ -43,4 +43,6 @@ class ThreatIntelligenceFinding(Base):
         nullable=False,
     )
 
-    incident: Mapped[Incident] = relationship(back_populates="threat_intelligence_findings")
+    incident: Mapped[Incident] = relationship(
+        back_populates="threat_intelligence_findings"
+    )

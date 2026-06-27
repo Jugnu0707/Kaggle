@@ -25,7 +25,9 @@ class RiskAssessmentRepository:
         stmt = delete(RiskAssessment).where(RiskAssessment.incident_id == incident_id)
         self.db.execute(stmt)
 
-    def get_latest_by_incident_id(self, incident_id: uuid.UUID) -> RiskAssessment | None:
+    def get_latest_by_incident_id(
+        self, incident_id: uuid.UUID
+    ) -> RiskAssessment | None:
         """Return the most recent risk assessment for an incident."""
         stmt = (
             select(RiskAssessment)
