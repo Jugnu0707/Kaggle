@@ -1,6 +1,20 @@
 # Oz AI Demo Assets
 
-Visual assets demonstrating the Oz AI dashboard and investigation workflow. Screenshots are generated via `scripts/generate_assets.py` and can be replaced with live browser captures before final submission.
+Visual assets and **official Kaggle demonstration video** preparation materials for Oz AI.
+
+## Video preparation (Sprint 4 Task 3)
+
+| Document | Purpose |
+|----------|---------|
+| [demo_script.md](demo_script.md) | Full timed script (target 4:30) |
+| [storyboard.md](storyboard.md) | Scene-by-scene screen, narration, duration |
+| [narration.md](narration.md) | Speaking notes and delivery tips |
+| [recording_checklist.md](recording_checklist.md) | Pre-flight checklist before recording |
+| [demo_flow.md](demo_flow.md) | Step-by-step operator guide |
+| [faq.md](faq.md) | Judge Q&A with implementation-backed answers |
+
+**Showcase incident:** Suspicious PowerShell Execution  
+**Do not record until checklist is complete.**
 
 ## Dashboard and navigation
 

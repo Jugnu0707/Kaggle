@@ -18,6 +18,7 @@
 | Sprint 3.5 | Competition prep | **Complete** | Doc sync (T1), ADK/MCP runtime (T2), hardening (T3), demo assets (T4) |
 | Sprint 4 Task 1 | Repository quality | **Complete** | README rewrite, architecture docs, community files, readiness report |
 | Sprint 4 Task 2 | Kaggle submission docs | **Complete** | `docs/kaggle/` written materials for capstone submission |
+| Sprint 4 Task 3 | Demo video prep | **Complete** | `docs/demo/` script, storyboard, narration, checklist, flow, FAQ |
 | Sprint 4 | Release hardening | **In progress** | Auth, approval workflow, datasets, submission notebook |
 
 ---
