@@ -347,7 +347,8 @@ export function IncidentDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
         <Link to="/incidents" className="text-sm text-indigo-600 hover:underline dark:text-indigo-400">
           Back to incidents
         </Link>
@@ -355,6 +356,13 @@ export function IncidentDetailPage() {
           {incident.title}
         </h2>
         <p className="mt-1 font-mono text-xs text-slate-500 dark:text-slate-400">{incident.id}</p>
+        </div>
+        <Link
+          to={`/incidents/${incident.id}/investigate`}
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+        >
+          ▶ Start Investigation
+        </Link>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

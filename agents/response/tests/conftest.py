@@ -1,12 +1,23 @@
 """Pytest fixtures for Response Planning Agent unit tests."""
 
+from unittest.mock import MagicMock, patch
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import app.models  # noqa: F401
+from agents.conftest import build_mock_ai_runtime
 from app.db.database import Base
+
+
+@pytest.fixture
+def mock_ai_runtime() -> MagicMock:
+    """Mock AI runtime for Response Planning service tests."""
+    mock_runtime = build_mock_ai_runtime()
+    with patch("agents.response.service.get_ai_runtime", return_value=mock_runtime):
+        yield mock_runtime
 
 
 @pytest.fixture

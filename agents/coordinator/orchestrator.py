@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from sqlalchemy.orm import Session
 
 from agents.coordinator.models import CoordinatorInput, OrchestrationPlan
+from app.ai.runtime import get_ai_runtime
 from app.core.exceptions import NotFoundException
 from app.core.logging import get_logger
-from app.repositories.incident_repository import IncidentRepository
 from app.repositories.log_repository import LogRepository
 
 logger = get_logger(__name__)
@@ -41,15 +41,21 @@ class CoordinatorOrchestrator:
     def validate_request(
         self, request: CoordinatorInput, db: Session
     ) -> ValidatedOrchestrationRequest:
-        """Validate that referenced incidents or logs exist."""
-        incident_repo = IncidentRepository(db)
+        """Validate that referenced incidents or logs exist via MCP and repositories."""
+        runtime = get_ai_runtime()
         log_repo = LogRepository(db)
 
         incident_id = request.incident_id
         log_id = request.log_id
 
-        if incident_id is not None and incident_repo.get_by_id(incident_id) is None:
-            raise NotFoundException("Incident not found")
+        if incident_id is not None:
+            incident_result = runtime.invoke_tool(
+                "incident_details",
+                {"incident_id": str(incident_id)},
+                db,
+            )
+            if not incident_result.success:
+                raise NotFoundException("Incident not found")
 
         log_file = None
         if log_id is not None:
@@ -90,25 +96,31 @@ class CoordinatorOrchestrator:
         request: CoordinatorInput,
         db: Session,
     ) -> tuple[OrchestrationPlan, int]:
-        """Validate the request and build an orchestration plan."""
+        """Validate the request and build an orchestration plan through the AI runtime."""
+        runtime = get_ai_runtime()
+        session = runtime.create_agent_session("Coordinator Agent")
         started = time.perf_counter()
         logger.info(
-            "Orchestration request received: incident_id=%s log_id=%s",
+            "Orchestration request received: incident_id=%s log_id=%s tools=%d",
             request.incident_id,
             request.log_id,
+            len(runtime.discover_tools()),
         )
 
-        validated = self.validate_request(request, db)
-        workflow = self.route_agents(validated)
-        workflow_id = uuid.uuid4()
+        try:
+            validated = self.validate_request(request, db)
+            workflow = self.route_agents(validated)
+            workflow_id = uuid.uuid4()
 
-        plan = OrchestrationPlan(
-            incident_id=validated.incident_id,
-            log_id=validated.log_id,
-            workflow_id=workflow_id,
-            status="accepted",
-            workflow=workflow,
-        )
+            plan = OrchestrationPlan(
+                incident_id=validated.incident_id,
+                log_id=validated.log_id,
+                workflow_id=workflow_id,
+                status="accepted",
+                workflow=workflow,
+            )
+        finally:
+            runtime.close_agent_session(session.session_id)
 
         duration_ms = int((time.perf_counter() - started) * 1000)
         logger.info("Orchestration completed in %dms", duration_ms)

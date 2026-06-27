@@ -2,7 +2,7 @@
 
 **Project Name:** Oz AI
 **Version:** 1.0 (MVP)
-**Last Updated:** 2026-06-26
+**Last Updated:** 2026-06-27
 
 > This document contains all Architecture Decision Records (ADRs) for Oz AI. An ADR is created whenever a significant technical or architectural decision is made. ADRs are **append-only** — once recorded, they are never deleted or modified. If a decision is reversed or superseded, a new ADR is created referencing the original.
 
@@ -326,6 +326,43 @@ The Timeline tab in the UI continues to display `IncidentTimeline` data. MITRE t
 
 ---
 
+## ADR-004 — Investigation Workflow and Service-Layer Agent Integration
+
+**Status:** Accepted
+**Date:** 2026-06-27
+**Decision Maker(s):** Engineering Lead
+
+---
+
+### Context
+
+Sprint 3 implemented eight specialist agents, Guardian validation, Timeline Engine, and Evaluation Engine. The original architecture assumed ADK session state, MCP tool calls from agents, and `BackgroundTasks` dispatch on incident creation. Implementation diverged: agents call backend services directly, LLM via `google.genai.Client`, and investigations are triggered explicitly via `POST /api/v1/investigations/run`.
+
+A separate Timeline Engine (`TimelineService`) runs after specialist agents despite ADR-003 merging timeline into Evidence Agent at the design level.
+
+---
+
+### Decision
+
+1. **Explicit investigation trigger** — The full agent pipeline runs only when an operator calls the investigation API or Investigation Runner UI, not on `POST /api/v1/incidents`.
+2. **Service-layer integration** — Agent services in `backend/app/services/` invoke `agents/` modules directly; MCP tools remain infrastructure-only (5 operational tools).
+3. **Guardian between stages** — `orchestration_guardian.run_stage_with_guardian` validates each specialist output before the next stage runs.
+4. **Timeline and Evaluation as workflow stages** — Investigation workflow ends with Timeline Engine and Evaluation Engine after Executive Report and Guardian.
+5. **Synchronous workflow** — `InvestigationWorkflowService` runs in the HTTP request thread; no background queue.
+
+---
+
+### Consequences
+
+1. Documentation must not claim automatic pipeline dispatch on incident creation.
+2. ADR-001 consequence #6 (all external I/O via MCP) is **deferred** until domain MCP tools are implemented.
+3. `02_ARCHITECTURE.md` and README reflect service-layer agent calls as the current pattern.
+4. Docker backend image must include `evaluation/` package for evaluation endpoints in containers.
+
+---
+
+---
+
 ## Decision Log (Summary)
 
 | ADR # | Title | Status | Date |
@@ -333,3 +370,4 @@ The Timeline tab in the UI continues to display `IncidentTimeline` data. MITRE t
 | ADR-001 | Core Technology Stack Selection (Simplified for MVP) | Accepted | 2026-06-26 |
 | ADR-002 | Nine-Agent Pipeline Architecture | Superseded by ADR-003 | 2026-06-26 |
 | ADR-003 | Eight-Agent Pipeline (Timeline Merged into Evidence Agent) | Accepted | 2026-06-26 |
+| ADR-004 | Investigation Workflow and Service-Layer Agent Integration | Accepted | 2026-06-27 |

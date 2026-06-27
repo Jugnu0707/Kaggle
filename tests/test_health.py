@@ -24,4 +24,7 @@ def test_health_endpoint(client: TestClient) -> None:
     assert data["adk"] is True
     assert data["coordinator"] is True
     assert data["mcp"] is True
+    assert data["runtime"] is True
+    assert data["registered_agents"] == 8
+    assert data["registered_tools"] == 5
     assert "timestamp" in data

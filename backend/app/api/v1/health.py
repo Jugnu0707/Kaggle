@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from app.ai.runtime import get_ai_runtime
 from app.core.adk_runtime import get_adk_status
 from app.core.config import settings
 from app.core.mcp_runtime import is_mcp_running
@@ -30,6 +31,9 @@ class HealthData(BaseModel):
                 "adk": True,
                 "coordinator": True,
                 "mcp": True,
+                "runtime": True,
+                "registered_agents": 8,
+                "registered_tools": 5,
                 "timestamp": "2026-06-26T10:00:00+00:00",
             }
         }
@@ -43,6 +47,9 @@ class HealthData(BaseModel):
     adk: bool = Field(description="Whether Google ADK is installed and verified")
     coordinator: bool = Field(description="Whether the Coordinator Agent is loaded")
     mcp: bool = Field(description="Whether the MCP server is running")
+    runtime: bool = Field(description="Whether the unified AI runtime is initialized")
+    registered_agents: int = Field(description="Number of registered ADK agents")
+    registered_tools: int = Field(description="Number of registered MCP tools")
     timestamp: str = Field(description="ISO-8601 timestamp for the health check")
 
 
@@ -59,6 +66,7 @@ class HealthData(BaseModel):
 def health_check(db: Session = Depends(get_db)) -> APIResponse[HealthData]:
     """Return application health, uptime, database connectivity, ADK, and MCP status."""
     adk_status = get_adk_status()
+    runtime_status = get_ai_runtime().get_status()
     return APIResponse(
         success=True,
         message="Healthy",
@@ -71,6 +79,9 @@ def health_check(db: Session = Depends(get_db)) -> APIResponse[HealthData]:
             adk=adk_status["adk"],
             coordinator=adk_status["coordinator"],
             mcp=is_mcp_running(),
+            runtime=bool(runtime_status["runtime"]),
+            registered_agents=int(runtime_status["registered_agents"]),
+            registered_tools=int(runtime_status["registered_tools"]),
             timestamp=datetime.now(UTC).isoformat(),
         ),
     )

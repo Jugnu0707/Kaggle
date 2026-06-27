@@ -11,10 +11,10 @@ from agents.evidence.models import EvidenceInput, EvidencePackage
 from agents.evidence.service import EvidenceCollectionService
 from agents.mitre.mappings import map_evidence_text
 from agents.mitre.models import MitreMappingInput, MitreMappingResult
+from app.ai.runtime import get_ai_runtime
 from app.core.exceptions import NotFoundException
 from app.core.logging import get_logger
 from app.models.log_file import LogFile
-from app.repositories.incident_repository import IncidentRepository
 
 logger = get_logger(__name__)
 
@@ -26,13 +26,17 @@ class MitreMappingService:
 
     def __init__(self, db: Session) -> None:
         self.db = db
-        self.incident_repository = IncidentRepository(db)
         self.evidence_service = EvidenceCollectionService(db)
 
     def map_incident(self, request: MitreMappingInput) -> MitreMappingResult:
         """Collect incident evidence and apply rule-based MITRE mappings."""
-        incident = self.incident_repository.get_by_id(request.incident_id)
-        if incident is None:
+        runtime = get_ai_runtime()
+        incident_result = runtime.invoke_tool(
+            "incident_details",
+            {"incident_id": str(request.incident_id)},
+            self.db,
+        )
+        if not incident_result.success:
             raise NotFoundException("Incident not found")
 
         logger.info("Evidence received for MITRE mapping: incident_id=%s", request.incident_id)

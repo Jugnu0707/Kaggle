@@ -14,8 +14,16 @@ OPENAPI_TAGS = [
         "description": "Coordinator orchestration and agent workflow endpoints.",
     },
     {
+        "name": "evaluation",
+        "description": "Agent evaluation metrics and health scores.",
+    },
+    {
         "name": "dashboard",
         "description": "Aggregate metrics for the operations dashboard.",
+    },
+    {
+        "name": "investigations",
+        "description": "End-to-end investigation workflow execution.",
     },
     {
         "name": "incidents",

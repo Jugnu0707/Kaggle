@@ -19,6 +19,7 @@ from agents.evidence.models import (
     FileMetadata,
     TimestampRange,
 )
+from app.ai.runtime import get_ai_runtime
 from app.core.config import get_upload_path
 from app.core.exceptions import AppException, NotFoundException
 from app.core.logging import get_logger
@@ -50,6 +51,19 @@ class EvidenceCollectionService:
 
     def collect(self, request: EvidenceInput) -> EvidenceResult:
         """Validate inputs, read the log file, and produce an evidence package."""
+        runtime = get_ai_runtime()
+        health_result = runtime.invoke_tool("health", {}, self.db)
+        if health_result.success:
+            logger.info("MCP health tool executed via runtime for evidence collection")
+
+        logs_result = runtime.invoke_tool(
+            "list_logs",
+            {"page": 1, "page_size": 100},
+            self.db,
+        )
+        if logs_result.success:
+            logger.info("MCP list_logs tool executed via runtime for evidence collection")
+
         incident = self.incident_repository.get_by_id(request.incident_id)
         if incident is None:
             raise NotFoundException("Incident not found")

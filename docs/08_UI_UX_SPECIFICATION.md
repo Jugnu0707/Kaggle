@@ -3,8 +3,8 @@
 **Project Name:** Oz AI  
 **Subtitle:** Autonomous Enterprise Incident Response Platform  
 **Version:** 1.0 (MVP)  
-**Date:** 2026-06-26  
-**Status:** Official UI Blueprint — Pending Approval  
+**Date:** 2026-06-27  
+**Status:** Implemented (partial) — see §3 Navigation for actual routes  
 **Author:** Product Design / UX Architecture
 
 > This document is the authoritative UI and UX specification for Oz AI. After approval, no visual, navigational, or interaction design decisions may be implemented without updating this document. Implementation must align with `01_PROJECT_BRIEF.md`, `02_ARCHITECTURE.md`, and `06_PRODUCT_REQUIREMENTS.md`.
@@ -251,48 +251,35 @@ The application uses a persistent **left sidebar navigation** with a **top heade
 └──────────────┴──────────────────────────────────────────────────────┘
 ```
 
-### Sidebar Navigation Items
+### Sidebar navigation items (implemented)
 
-| Order | Label | Route | Icon (Reference) | Primary Audience | Description |
-|---|---|---|---|---|---|
-| 1 | **Dashboard** | `/` | `layout-dashboard` | All users | Aggregate metrics, recent activity, pipeline health |
-| 2 | **Incidents** | `/incidents` | `shield-alert` | Tier 1 Analyst, Engineer | Searchable, filterable incident list |
-| 3 | **Investigation** | `/investigation` | `search` | Analyst, Engineer | Active investigation workspace; deep-link to open incidents |
-| 4 | **Reports** | `/reports` | `file-text` | CISO, Manager | Aggregate and per-incident report access |
-| 5 | **Evaluation** | `/evaluation` | `bar-chart-2` | Engineer, Administrator | Agent performance metrics and evaluation results |
-| 6 | **Settings** | `/settings` | `settings` | Administrator | Configuration, API key, theme, system info |
-| 7 | **About** | `/about` | `info` | All users | Project info, competition context, documentation links |
+| Order | Label | Route | Status | Notes |
+|---|---|---|---|---|
+| 1 | **Dashboard** | `/` | Implemented | Metrics via `GET /api/v1/dashboard/stats` |
+| 2 | **Incidents** | `/incidents` | Implemented | List and detail views |
+| 3 | **Log Uploads** | `/logs` | Implemented | Not in original 7-item nav spec |
+| 4 | **Reports** | `/reports` | Placeholder | Stub page |
+| 5 | **Evaluation** | `/evaluation` | Implemented | `GET /api/v1/evaluation` |
+| 6 | **Settings** | `/settings` | Placeholder | Stub page |
 
-**Default landing route:** `/` (Dashboard)
+**Investigation Runner** (not a sidebar item): `/incidents/:id/investigate` — launched from Incident Detail **Start Investigation** button.
 
-### Navigation Behavior
+**Incident Detail:** `/incidents/:id` — tabs: Overview, Timeline, Threat Intelligence, MITRE, Risk, Response, Executive Report, Guardian Audit.
 
-- **Active state:** Left border accent (3px, `color-primary`) + `color-primary-muted` background tint + primary text color.
-- **Badge indicators:** Incidents nav item shows a count badge for incidents in `AwaitingReview` status. Guardian violations show a red dot on Incidents.
-- **Breadcrumbs:** Top header displays breadcrumb trail for nested views (e.g., `Incidents > INC-2024-00142 > Response Plan`).
-- **Keyboard:** `Alt+1` through `Alt+7` navigate to sidebar items (desktop only).
+**Not implemented:** `/about`, `/investigation` standalone route, API key login, approval workflow UI.
 
-### Top Header
+### Route mapping (implemented)
 
-| Element | Position | Content |
-|---|---|---|
-| Breadcrumb | Left | Current location hierarchy |
-| Active Incident Count | Center-right | `"3 Awaiting Review"` badge (links to filtered Incidents list) |
-| Session Indicator | Right | API key session status (connected / expired) |
-| Theme Toggle | Right | Dark / Light mode quick switch (mirrors Settings) |
-
-### Route Mapping (Alignment with Architecture)
-
-This specification expands the navigation defined in earlier documents. The mapping below ensures API and page consistency:
-
-| UI Screen | Primary API Resources |
+| UI screen | Primary API resources |
 |---|---|
-| Dashboard | `GET /api/v1/incidents`, `GET /api/v1/system/status` |
-| Incidents | `GET /api/v1/incidents` |
-| Investigation / Incident Detail | `GET /api/v1/incidents/{id}`, sub-resource endpoints |
-| Reports | `GET /api/v1/incidents/{id}/reports`, aggregate queries |
-| Evaluation | Evaluation harness output (MVP: static JSON from `evaluation/results/`) |
-| Settings | `GET /api/v1/system/status`, `GET /api/v1/health` |
+| Dashboard | `GET /api/v1/dashboard/stats`, `GET /api/v1/incidents` |
+| Incidents | `GET /api/v1/incidents`, `POST /api/v1/incidents` |
+| Incident Detail | `GET /api/v1/incidents/{id}` + sub-resource GETs |
+| Investigation Runner | `POST /api/v1/investigations/run`, `GET /api/v1/investigations/runs/{run_id}` |
+| Log Uploads | `POST /api/v1/logs/upload`, `GET /api/v1/logs` |
+| Evaluation | `GET /api/v1/evaluation`, `GET /api/v1/evaluation/{agent_name}` |
+| Reports | Planned — aggregate report endpoints not implemented |
+| Settings | `GET /api/v1/health`, `GET /api/v1/system/mcp` (no dedicated settings API) |
 
 ---
 

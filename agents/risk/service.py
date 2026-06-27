@@ -7,9 +7,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from pathlib import Path
 
-from google import genai
 from google.genai import errors as genai_errors
-from google.genai import types as genai_types
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -25,7 +23,7 @@ from agents.risk.schemas import (
     RiskAssessmentSource,
 )
 from agents.threat_intelligence.service import ThreatIntelligenceService
-from app.core.ai_config import ai_settings
+from app.ai.runtime import get_ai_runtime
 from app.core.exceptions import NotFoundException
 from app.core.logging import get_logger
 from app.models.log_file import LogFile
@@ -50,6 +48,11 @@ class RiskAssessmentService:
 
     def assess(self, request: RiskAssessmentInput) -> RiskAssessmentResult:
         """Assess incident risk using AI first, then fallback rules if needed."""
+        runtime = get_ai_runtime()
+        system_result = runtime.invoke_tool("system_info", {}, self.db)
+        if system_result.success:
+            logger.info("MCP system_info tool executed via runtime for risk assessment")
+
         context = self._gather_context(request.incident_id)
         logger.info("Risk assessment started: incident_id=%s", request.incident_id)
 
@@ -129,8 +132,8 @@ class RiskAssessmentService:
         self,
         context: RiskAssessmentContext,
     ) -> RiskAssessmentResult | None:
-        api_key = ai_settings.google_api_key.strip()
-        model = ai_settings.google_model.strip() or "gemini-2.0-flash"
+        api_key = get_ai_runtime().provider.get_api_key()
+        model = get_ai_runtime().provider.get_model()
         if not api_key:
             logger.warning("AI failure reason: GOOGLE_API_KEY is not configured")
             return None
@@ -175,16 +178,9 @@ class RiskAssessmentService:
         model: str,
         context: RiskAssessmentContext,
     ) -> AIRiskAssessmentResponse | None:
+        _ = api_key
         prompt = self._build_prompt(context)
-        client = genai.Client(api_key=api_key)
-        generation = client.models.generate_content(
-            model=model,
-            contents=prompt,
-            config=genai_types.GenerateContentConfig(
-                response_mime_type="application/json",
-            ),
-        )
-        raw_text = (generation.text or "").strip()
+        raw_text = get_ai_runtime().provider.generate_json(prompt, model=model)
         if not raw_text:
             logger.warning("AI failure reason: empty response from Gemini")
             return None

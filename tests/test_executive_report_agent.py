@@ -2,7 +2,7 @@
 
 import uuid
 from io import BytesIO
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -146,14 +146,20 @@ def test_executive_report_endpoint_ai_success(
         lessons_learned=["Review script execution controls on critical endpoints"],
     )
 
-    with patch(
-        "agents.executive_report.service.ExecutiveReportService._call_gemini",
-        return_value=ai_response,
-    ):
-        response = client.post(
-            "/api/v1/agents/executive-report",
-            json={"incident_id": incident_id},
-        )
+    mock_provider = MagicMock()
+    mock_provider.get_api_key.return_value = "test-key"
+    mock_provider.get_model.return_value = "gemini-2.5-pro"
+
+    with patch("agents.executive_report.service.get_ai_runtime") as mock_runtime:
+        mock_runtime.return_value.provider = mock_provider
+        with patch(
+            "agents.executive_report.service.ExecutiveReportService._call_gemini",
+            return_value=ai_response,
+        ):
+            response = client.post(
+                "/api/v1/agents/executive-report",
+                json={"incident_id": incident_id},
+            )
 
     assert response.status_code == 200
     data = response.json()["data"]

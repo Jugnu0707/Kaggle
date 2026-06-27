@@ -5,6 +5,7 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.models.enums import UploadStatus
 from app.models.log_file import LogFile
 
 
@@ -23,6 +24,20 @@ class LogRepository:
     def get_by_id(self, log_id: uuid.UUID) -> LogFile | None:
         """Return an active log file by ID."""
         stmt = select(LogFile).where(LogFile.id == log_id, LogFile.deleted_at.is_(None))
+        return self.db.scalar(stmt)
+
+    def get_latest_for_incident(self, incident_id: uuid.UUID) -> LogFile | None:
+        """Return the most recent completed log file linked to an incident."""
+        stmt = (
+            select(LogFile)
+            .where(
+                LogFile.incident_id == incident_id,
+                LogFile.deleted_at.is_(None),
+                LogFile.upload_status == UploadStatus.COMPLETED,
+            )
+            .order_by(LogFile.uploaded_at.desc())
+            .limit(1)
+        )
         return self.db.scalar(stmt)
 
     def list_log_files(

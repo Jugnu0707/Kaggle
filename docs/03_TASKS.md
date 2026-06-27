@@ -2,9 +2,25 @@
 
 **Project Name:** Oz AI
 **Version:** 1.0 (MVP)
-**Last Updated:** 2026-06-26
+**Last Updated:** 2026-06-27
 
 > This document is the authoritative engineering backlog for the Oz AI MVP. All work must be tracked here. Pull requests must reference a task ID. Mark tasks complete with `[x]` when merged to `main`. Add new tasks as they are discovered — never remove tasks.
+
+---
+
+## Sprint progress (2026-06-27)
+
+| Sprint | Status | Highlights |
+|--------|--------|------------|
+| Sprint 1 — Foundation | Complete | Backend, frontend, Docker, incident/log CRUD |
+| Sprint 2 — ADK & MCP | Complete | ADK runtime, 5 MCP tools, Coordinator, Evidence |
+| Sprint 3 — Agents & workflow | Complete | 6 specialist agents, Guardian, Timeline, Evaluation, Investigation Runner |
+| Sprint 3.5 — Doc sync | In progress | Task 1: documentation alignment |
+| Sprint 4 — Release | Planned | Auth, approval workflow, datasets, submission |
+
+See [`08_MILESTONES.md`](08_MILESTONES.md) for milestone percentages and metrics.
+
+**Notable gaps:** M1-T25 (API auth), M3-T01 (auto-pipeline on create), M4 domain MCP tools, M6 approval workflow, M8 30-scenario library, M9 submission.
 
 ---
 
@@ -20,50 +36,50 @@
 
 ### 1.1 Repository
 
-- [ ] **M1-T01** — Initialize the repository with the complete folder structure defined in `02_ARCHITECTURE.md` (all top-level directories and `__init__.py` / `index.ts` placeholders where needed)
-- [ ] **M1-T02** — Create `.gitignore` covering Python artifacts (`__pycache__`, `.venv`, `*.pyc`, `*.db`), Node artifacts (`node_modules`, `dist`), Docker artifacts, OS artifacts (`.DS_Store`, `Thumbs.db`), and environment files (`.env`)
-- [ ] **M1-T03** — Create `.env.example` with all required environment variable keys documented with descriptions (no values)
-- [ ] **M1-T04** — Initialize `pyproject.toml` with Python project metadata, pinned dependencies (FastAPI, SQLAlchemy, Pydantic, aiosqlite, httpx, pytest, black, ruff), and tool configuration sections
-- [ ] **M1-T05** — Initialize `package.json` for the frontend with pinned dependencies: React 19, TypeScript, Tailwind CSS, Vite
-- [ ] **M1-T06** — Create `LICENSE` (MIT License)
-- [ ] **M1-T07** — Create `README.md` with: project overview, competition context, architecture summary, quickstart guide, environment variable reference, and links to all documentation
+- [x] **M1-T01** — Initialize the repository with the complete folder structure defined in `02_ARCHITECTURE.md` (all top-level directories and `__init__.py` / `index.ts` placeholders where needed)
+- [x] **M1-T02** — Create `.gitignore` covering Python artifacts (`__pycache__`, `.venv`, `*.pyc`, `*.db`), Node artifacts (`node_modules`, `dist`), Docker artifacts, OS artifacts (`.DS_Store`, `Thumbs.db`), and environment files (`.env`)
+- [x] **M1-T03** — Create `.env.example` with all required environment variable keys documented with descriptions (no values)
+- [x] **M1-T04** — Initialize `pyproject.toml` with Python project metadata, pinned dependencies (FastAPI, SQLAlchemy, Pydantic, aiosqlite, httpx, pytest, black, ruff), and tool configuration sections
+- [x] **M1-T05** — Initialize `package.json` for the frontend with pinned dependencies: React 19, TypeScript, Tailwind CSS, Vite
+- [x] **M1-T06** — Create `LICENSE` (MIT License)
+- [x] **M1-T07** — Create `README.md` with: project overview, competition context, architecture summary, quickstart guide, environment variable reference, and links to all documentation
 
 ### 1.2 Documentation Review
 
-- [ ] **M1-T08** — Final review pass on `01_PROJECT_BRIEF.md` for cross-document consistency
-- [ ] **M1-T09** — Final review pass on `02_ARCHITECTURE.md` — verify all agent names, tool names, and endpoint paths are consistent
-- [ ] **M1-T10** — Final review pass on `03_TASKS.md` (this document)
-- [ ] **M1-T11** — Final review pass on `04_DECISIONS.md`
-- [ ] **M1-T12** — Final review pass on `05_PROGRESS.md`
+- [x] **M1-T08** — Final review pass on `01_PROJECT_BRIEF.md` for cross-document consistency
+- [x] **M1-T09** — Final review pass on `02_ARCHITECTURE.md` — verify all agent names, tool names, and endpoint paths are consistent
+- [x] **M1-T10** — Final review pass on `03_TASKS.md` (this document)
+- [x] **M1-T11** — Final review pass on `04_DECISIONS.md`
+- [x] **M1-T12** — Final review pass on `05_PROGRESS.md`
 - [ ] **M1-T13** — Final review pass on `06_PRODUCT_REQUIREMENTS.md`
-- [ ] **M1-T14** — Final review pass on `07_SUBMISSION_CHECKLIST.md`
-- [ ] **M1-T15** — Final review pass on `08_UI_UX_SPECIFICATION.md`
-- [ ] **M1-T15a** — Final review pass on `.cursor/rules.md`
+- [x] **M1-T14** — Final review pass on `07_SUBMISSION_CHECKLIST.md`
+- [x] **M1-T15** — Final review pass on `08_UI_UX_SPECIFICATION.md`
+- [x] **M1-T15a** — Final review pass on `.cursor/rules.md`
 
 ### 1.3 Docker
 
-- [ ] **M1-T16** — Create `docker/Dockerfile.backend` for the FastAPI application (Python 3.12 slim base, `pyproject.toml` install, non-root user)
+- [x] **M1-T16** — Create `docker/Dockerfile.backend` for the FastAPI application (Python 3.12 slim base, `pyproject.toml` install, non-root user)
 - [ ] **M1-T17** — Create `docker/Dockerfile.frontend` for the React application (Node LTS base, multi-stage: build + Nginx static serve)
-- [ ] **M1-T18** — Create `docker-compose.yml` orchestrating: `backend` (port 8000) and `frontend` (port 5173 dev / 80 prod)
-- [ ] **M1-T19** — Verify `docker compose up` starts both services with no errors in a clean environment
-- [ ] **M1-T20** — Verify the frontend can reach the backend `/api/v1/health` endpoint within the Docker network
+- [x] **M1-T18** — Create `docker-compose.yml` orchestrating: `backend` (port 8000) and `frontend` (port 5173 dev / 80 prod)
+- [x] **M1-T19** — Verify `docker compose up` starts both services with no errors in a clean environment
+- [x] **M1-T20** — Verify the frontend can reach the backend `/api/v1/health` endpoint within the Docker network
 
 ### 1.4 Backend Skeleton
 
-- [ ] **M1-T21** — Create `backend/core/config.py` using Pydantic Settings to load all configuration from environment variables
-- [ ] **M1-T22** — Create `backend/core/database.py` with async SQLAlchemy engine, session factory, and `get_db` dependency
-- [ ] **M1-T23** — Create `backend/main.py` — FastAPI application with lifespan (DB initialization on startup), CORS middleware, and API router registration
-- [ ] **M1-T24** — Implement `GET /api/v1/health` returning service name, version, and status
+- [x] **M1-T21** — Create `backend/core/config.py` using Pydantic Settings to load all configuration from environment variables
+- [x] **M1-T22** — Create `backend/core/database.py` with async SQLAlchemy engine, session factory, and `get_db` dependency
+- [x] **M1-T23** — Create `backend/main.py` — FastAPI application with lifespan (DB initialization on startup), CORS middleware, and API router registration
+- [x] **M1-T24** — Implement `GET /api/v1/health` returning service name, version, and status
 - [ ] **M1-T25** — Implement API key bearer token authentication middleware applied to all `/api/v1/` routes except `/health`
 
 ### 1.5 Frontend Skeleton
 
-- [ ] **M1-T26** — Bootstrap the Vite + React + TypeScript project with strict TypeScript configuration
-- [ ] **M1-T27** — Configure Tailwind CSS with a design token system (project color palette for severity levels: Critical=red, High=orange, Medium=yellow, Low=blue, Info=gray)
-- [ ] **M1-T28** — Set up React Router with placeholder routes for all planned pages
-- [ ] **M1-T29** — Create a base `Layout` component with a navigation sidebar and top header
-- [ ] **M1-T30** — Create the API client service (`frontend/src/services/api.ts`) as a typed `fetch` wrapper pointing to the backend base URL from environment
-- [ ] **M1-T31** — Verify the frontend renders with no TypeScript or Tailwind errors
+- [x] **M1-T26** — Bootstrap the Vite + React + TypeScript project with strict TypeScript configuration
+- [x] **M1-T27** — Configure Tailwind CSS with a design token system (project color palette for severity levels: Critical=red, High=orange, Medium=yellow, Low=blue, Info=gray)
+- [x] **M1-T28** — Set up React Router with placeholder routes for all planned pages
+- [x] **M1-T29** — Create a base `Layout` component with a navigation sidebar and top header
+- [x] **M1-T30** — Create the API client service (`frontend/src/services/api.ts`) as a typed `fetch` wrapper pointing to the backend base URL from environment
+- [x] **M1-T31** — Verify the frontend renders with no TypeScript or Tailwind errors
 
 ---
 
@@ -73,36 +89,36 @@
 
 ### 2.1 SQLAlchemy ORM Models
 
-- [ ] **M2-T01** — Define `Incident` model: id, status (enum), severity (enum), raw\_payload (JSON), created\_at, updated\_at, pipeline\_stage
-- [ ] **M2-T02** — Define `EvidenceBundle` model: incident\_id (FK), events (JSON), entities (JSON), topology\_context (JSON), evidence\_gaps (JSON), collected\_at
-- [ ] **M2-T03** — Define `ThreatIntelReport` model: incident\_id (FK), ioc\_matches (JSON), threat\_actor\_associations (JSON), novelty\_assessment, confidence\_score, created\_at
-- [ ] **M2-T04** — Define `MITREMapping` model: incident\_id (FK), technique\_mappings (JSON), kill\_chain\_stage, coverage\_assessment, created\_at
-- [ ] **M2-T05** — Define `IncidentTimeline` model: incident\_id (FK), events (JSON), compromise\_timeline (JSON), gap\_analysis (JSON), created\_at
-- [ ] **M2-T06** — Define `RiskAssessment` model: incident\_id (FK), severity\_level, blast\_radius (JSON), affected\_assets (JSON), regulatory\_exposure (JSON), risk\_score (int), confidence\_level, created\_at
-- [ ] **M2-T07** — Define `ResponsePlan` model: incident\_id (FK), phase\_summary (JSON), created\_at, approval\_status
-- [ ] **M2-T08** — Define `ResponseAction` model: plan\_id (FK), action\_description, phase (enum: containment/remediation/recovery), risk\_level (enum), requires\_approval (bool), approval\_status (enum), approved\_by, approved\_at
-- [ ] **M2-T09** — Define `IncidentReportBundle` model: incident\_id (FK), technical\_report (text), executive\_summary (text), compliance\_summary (text), created\_at
-- [ ] **M2-T10** — Define `GuardianReport` model: incident\_id (FK), injection\_scan\_result (JSON), pii\_scan\_result (JSON), permission\_audit (JSON), approval\_gate\_result (JSON), output\_safety\_result (JSON), created\_at
-- [ ] **M2-T11** — Define `AuditEvent` model: id, incident\_id (FK), event\_type, actor (agent name or "human"), action, outcome, metadata (JSON), timestamp — no update/delete permitted
+- [x] **M2-T01** — Define `Incident` model: id, status (enum), severity (enum), raw\_payload (JSON), created\_at, updated\_at, pipeline\_stage
+- [x] **M2-T02** — Define `EvidenceBundle` model: incident\_id (FK), events (JSON), entities (JSON), topology\_context (JSON), evidence\_gaps (JSON), collected\_at
+- [x] **M2-T03** — Define `ThreatIntelReport` model: incident\_id (FK), ioc\_matches (JSON), threat\_actor\_associations (JSON), novelty\_assessment, confidence\_score, created\_at
+- [x] **M2-T04** — Define `MITREMapping` model: incident\_id (FK), technique\_mappings (JSON), kill\_chain\_stage, coverage\_assessment, created\_at
+- [x] **M2-T05** — Define `IncidentTimeline` model: incident\_id (FK), events (JSON), compromise\_timeline (JSON), gap\_analysis (JSON), created\_at
+- [x] **M2-T06** — Define `RiskAssessment` model: incident\_id (FK), severity\_level, blast\_radius (JSON), affected\_assets (JSON), regulatory\_exposure (JSON), risk\_score (int), confidence\_level, created\_at
+- [x] **M2-T07** — Define `ResponsePlan` model: incident\_id (FK), phase\_summary (JSON), created\_at, approval\_status
+- [x] **M2-T08** — Define `ResponseAction` model: plan\_id (FK), action\_description, phase (enum: containment/remediation/recovery), risk\_level (enum), requires\_approval (bool), approval\_status (enum), approved\_by, approved\_at
+- [x] **M2-T09** — Define `IncidentReportBundle` model: incident\_id (FK), technical\_report (text), executive\_summary (text), compliance\_summary (text), created\_at
+- [x] **M2-T10** — Define `GuardianReport` model: incident\_id (FK), injection\_scan\_result (JSON), pii\_scan\_result (JSON), permission\_audit (JSON), approval\_gate\_result (JSON), output\_safety\_result (JSON), created\_at
+- [x] **M2-T11** — Define `AuditEvent` model: id, incident\_id (FK), event\_type, actor (agent name or "human"), action, outcome, metadata (JSON), timestamp — no update/delete permitted
 
 ### 2.2 Pydantic Schemas
 
-- [ ] **M2-T12** — Define shared enums: `IncidentStatus`, `Severity`, `IncidentCategory`, `PipelineStage`, `ActionPhase`, `RiskLevel`, `ApprovalStatus`
-- [ ] **M2-T13** — Define API schemas for `Incident`: `IncidentCreate`, `IncidentRead`, `IncidentListItem`
-- [ ] **M2-T14** — Define internal agent data schemas matching each ORM model: `EvidenceBundleSchema`, `ThreatIntelReportSchema`, `MITREMappingSchema`, `IncidentTimelineSchema`, `RiskAssessmentSchema`, `ResponsePlanSchema`, `ResponseActionSchema`
-- [ ] **M2-T15** — Define `AuditEventSchema` for read and write operations
-- [ ] **M2-T16** — Define `GuardianReportSchema`
+- [x] **M2-T12** — Define shared enums: `IncidentStatus`, `Severity`, `IncidentCategory`, `PipelineStage`, `ActionPhase`, `RiskLevel`, `ApprovalStatus`
+- [x] **M2-T13** — Define API schemas for `Incident`: `IncidentCreate`, `IncidentRead`, `IncidentListItem`
+- [x] **M2-T14** — Define internal agent data schemas matching each ORM model: `EvidenceBundleSchema`, `ThreatIntelReportSchema`, `MITREMappingSchema`, `IncidentTimelineSchema`, `RiskAssessmentSchema`, `ResponsePlanSchema`, `ResponseActionSchema`
+- [x] **M2-T15** — Define `AuditEventSchema` for read and write operations
+- [x] **M2-T16** — Define `GuardianReportSchema`
 
 ### 2.3 Service Layer
 
-- [ ] **M2-T17** — Implement `IncidentService`: create, get by ID, list with filters, update status/pipeline\_stage
-- [ ] **M2-T18** — Implement `AuditService`: append-only write; no update or delete methods defined
-- [ ] **M2-T19** — Implement `ReportService`: write and retrieve `IncidentReportBundle`
-- [ ] **M2-T20** — Write unit tests for all service methods (mock DB session)
+- [x] **M2-T17** — Implement `IncidentService`: create, get by ID, list with filters, update status/pipeline\_stage
+- [x] **M2-T18** — Implement `AuditService`: append-only write; no update or delete methods defined
+- [x] **M2-T19** — Implement `ReportService`: write and retrieve `IncidentReportBundle`
+- [x] **M2-T20** — Write unit tests for all service methods (mock DB session)
 
 ### 2.4 Database Initialization
 
-- [ ] **M2-T21** — Implement database table creation on FastAPI application startup (SQLAlchemy `create_all` for MVP)
+- [x] **M2-T21** — Implement database table creation on FastAPI application startup (SQLAlchemy `create_all` for MVP)
 - [ ] **M2-T22** — Create `scripts/seed_datasets.py`: seed the local knowledge base (`datasets/threat_intel/`, `datasets/mitre/`) with static reference data required by MCP tools
 - [ ] **M2-T23** — Create `scripts/reset_db.py`: drops and recreates all tables for clean development state
 
@@ -115,18 +131,18 @@
 ### 3.1 Incident API
 
 - [ ] **M3-T01** — Implement `POST /api/v1/incidents`: validate payload, create Incident record, dispatch agent pipeline as BackgroundTask, return incident ID
-- [ ] **M3-T02** — Implement `GET /api/v1/incidents`: paginated list with severity and status filters
-- [ ] **M3-T03** — Implement `GET /api/v1/incidents/{id}`: full incident record including all agent results
+- [x] **M3-T02** — Implement `GET /api/v1/incidents`: paginated list with severity and status filters
+- [x] **M3-T03** — Implement `GET /api/v1/incidents/{id}`: full incident record including all agent results
 - [ ] **M3-T04** — Implement `GET /api/v1/incidents/{id}/evidence`: evidence bundle
-- [ ] **M3-T05** — Implement `GET /api/v1/incidents/{id}/mitre`: MITRE ATT&CK mapping
-- [ ] **M3-T06** — Implement `GET /api/v1/incidents/{id}/timeline`: incident timeline
-- [ ] **M3-T07** — Implement `GET /api/v1/incidents/{id}/risk`: risk assessment
-- [ ] **M3-T08** — Implement `GET /api/v1/incidents/{id}/response`: response plan with all actions
+- [x] **M3-T05** — Implement `GET /api/v1/incidents/{id}/mitre`: MITRE ATT&CK mapping
+- [x] **M3-T06** — Implement `GET /api/v1/incidents/{id}/timeline`: incident timeline
+- [x] **M3-T07** — Implement `GET /api/v1/incidents/{id}/risk`: risk assessment
+- [x] **M3-T08** — Implement `GET /api/v1/incidents/{id}/response`: response plan with all actions
 - [ ] **M3-T09** — Implement `GET /api/v1/incidents/{id}/reports`: incident report bundle
 - [ ] **M3-T10** — Implement `GET /api/v1/incidents/{id}/audit`: audit trail (ordered by timestamp)
-- [ ] **M3-T11** — Implement `GET /api/v1/incidents/{id}/guardian`: Guardian Agent report
-- [ ] **M3-T12** — Write pytest integration tests for all incident read endpoints
-- [ ] **M3-T13** — Verify FastAPI OpenAPI schema (`/docs`) accurately reflects all endpoint contracts
+- [x] **M3-T11** — Implement `GET /api/v1/incidents/{id}/guardian`: Guardian Agent report
+- [x] **M3-T12** — Write pytest integration tests for all incident read endpoints
+- [x] **M3-T13** — Verify FastAPI OpenAPI schema (`/docs`) accurately reflects all endpoint contracts
 
 ### 3.2 Alert Simulator
 
@@ -142,8 +158,8 @@
 
 ### 4.1 MCP Infrastructure
 
-- [ ] **M4-T01** — Set up the MCP server framework in `mcp/` (server base class, response contract definition, tool registration pattern)
-- [ ] **M4-T02** — Define the standard tool response contract: `ToolResult[T]` with `success: bool`, `data: T`, `error: str | None`
+- [x] **M4-T01** — Set up the MCP server framework in `mcp/` (server base class, response contract definition, tool registration pattern)
+- [x] **M4-T02** — Define the standard tool response contract: `ToolResult[T]` with `success: bool`, `data: T`, `error: str | None`
 - [ ] **M4-T03** — Implement tool permission registry: maps each agent to its allowed tool set; rejects out-of-scope calls
 
 ### 4.2 Tool Implementations
@@ -179,67 +195,67 @@
 
 ### 5.1 ADK Setup
 
-- [ ] **M5-T01** — Install and configure Google ADK in the Python environment (pin version in `pyproject.toml`)
-- [ ] **M5-T02** — Configure ADK to use Gemini as the LLM backend (model name and API key from environment)
+- [x] **M5-T01** — Install and configure Google ADK in the Python environment (pin version in `pyproject.toml`)
+- [x] **M5-T02** — Configure ADK to use Gemini as the LLM backend (model name and API key from environment)
 - [ ] **M5-T03** — Implement the ADK session factory and define the session state schema for the incident pipeline
 - [ ] **M5-T04** — Verify ADK can initialize a minimal `LlmAgent`, call a registered MCP tool, and return a structured result end-to-end
 
 ### 5.2 Guardian Agent (implement first — validates all others)
 
-- [ ] **M5-T05** — Implement the Guardian Agent system prompt with explicit instructions for injection detection, PII scanning, permission validation, and approval gate enforcement
-- [ ] **M5-T06** — Register `prompt_injection_detector`, `pii_scanner`, and `audit_log_write` as permitted tools
-- [ ] **M5-T07** — Implement the ingestion-phase Guardian invocation: validate raw alert payload before Evidence Agent processing
-- [ ] **M5-T08** — Implement the pipeline-completion Guardian invocation: validate all accumulated agent outputs
-- [ ] **M5-T09** — Implement the `GuardianReport` output parser and database write
-- [ ] **M5-T10** — Write unit tests for the Guardian Agent against: 5 clean payloads, 5 injection attempts, 5 PII-containing outputs
+- [x] **M5-T05** — Implement the Guardian Agent system prompt with explicit instructions for injection detection, PII scanning, permission validation, and approval gate enforcement
+- [x] **M5-T06** — Register `prompt_injection_detector`, `pii_scanner`, and `audit_log_write` as permitted tools
+- [x] **M5-T07** — Implement the ingestion-phase Guardian invocation: validate raw alert payload before Evidence Agent processing
+- [x] **M5-T08** — Implement the pipeline-completion Guardian invocation: validate all accumulated agent outputs
+- [x] **M5-T09** — Implement the `GuardianReport` output parser and database write
+- [x] **M5-T10** — Write unit tests for the Guardian Agent against: 5 clean payloads, 5 injection attempts, 5 PII-containing outputs
 
 ### 5.3 Evidence Agent
 
-- [ ] **M5-T11** — Implement the Evidence Agent system prompt with entity extraction, log correlation, gap documentation, and **timeline generation** requirements
+- [x] **M5-T11** — Implement the Evidence Agent system prompt with entity extraction, log correlation, gap documentation, and **timeline generation** requirements
 - [ ] **M5-T12** — Register `evidence_collector`, `system_topology_query`, `incident_record_write`, `audit_log_write` as permitted tools
-- [ ] **M5-T13** — Implement output parsing for `EvidenceBundle` and `IncidentTimeline`; write both records to the database
-- [ ] **M5-T14** — Write unit tests against 5 synthetic alert payloads (verify entity extraction, evidence gaps, and timeline ordering)
+- [x] **M5-T13** — Implement output parsing for `EvidenceBundle` and `IncidentTimeline`; write both records to the database
+- [x] **M5-T14** — Write unit tests against 5 synthetic alert payloads (verify entity extraction, evidence gaps, and timeline ordering)
 
 ### 5.4 Threat Intelligence Agent
 
-- [ ] **M5-T15** — Implement the Threat Intelligence Agent system prompt with IOC lookup, attribution, and confidence scoring requirements
+- [x] **M5-T15** — Implement the Threat Intelligence Agent system prompt with IOC lookup, attribution, and confidence scoring requirements
 - [ ] **M5-T16** — Register `threat_intel_lookup`, `knowledge_base_search`, `incident_record_write`, `audit_log_write` as permitted tools
-- [ ] **M5-T17** — Implement the `ThreatIntelReport` output parser and database write
-- [ ] **M5-T18** — Write unit tests against 5 evidence bundles (2 with known IOC matches, 3 with no matches — verify correct "no attribution" handling)
+- [x] **M5-T17** — Implement the `ThreatIntelReport` output parser and database write
+- [x] **M5-T18** — Write unit tests against 5 evidence bundles (2 with known IOC matches, 3 with no matches — verify correct "no attribution" handling)
 
 ### 5.5 MITRE Mapping Agent
 
-- [ ] **M5-T19** — Implement the MITRE Mapping Agent system prompt with explicit ATT&CK technique mapping, evidence citation, and confidence scoring requirements
+- [x] **M5-T19** — Implement the MITRE Mapping Agent system prompt with explicit ATT&CK technique mapping, evidence citation, and confidence scoring requirements
 - [ ] **M5-T20** — Register `mitre_attack_search`, `knowledge_base_search`, `incident_record_write`, `audit_log_write` as permitted tools
-- [ ] **M5-T21** — Implement the `MITREMapping` output parser and database write
-- [ ] **M5-T22** — Write unit tests against 5 evidence + threat intel input combinations; verify technique IDs are valid ATT&CK entries
+- [x] **M5-T21** — Implement the `MITREMapping` output parser and database write
+- [x] **M5-T22** — Write unit tests against 5 evidence + threat intel input combinations; verify technique IDs are valid ATT&CK entries
 
 ### 5.5 Risk Assessment Agent
 
-- [ ] **M5-T27** — Implement the Risk Assessment Agent system prompt with severity classification, blast radius analysis, regulatory exposure assessment, and risk scoring requirements
+- [x] **M5-T27** — Implement the Risk Assessment Agent system prompt with severity classification, blast radius analysis, regulatory exposure assessment, and risk scoring requirements
 - [ ] **M5-T28** — Register `system_topology_query`, `knowledge_base_search`, `incident_record_write`, `audit_log_write` as permitted tools
-- [ ] **M5-T29** — Implement the `RiskAssessment` output parser and database write
-- [ ] **M5-T30** — Write unit tests against 5 labeled scenarios (verify severity classification matches ground truth)
+- [x] **M5-T29** — Implement the `RiskAssessment` output parser and database write
+- [x] **M5-T30** — Write unit tests against 5 labeled scenarios (verify severity classification matches ground truth)
 
 ### 5.6 Response Planning Agent
 
-- [ ] **M5-T31** — Implement the Response Planning Agent system prompt with playbook search, action prioritization, risk annotation, and human approval flag requirements
+- [x] **M5-T31** — Implement the Response Planning Agent system prompt with playbook search, action prioritization, risk annotation, and human approval flag requirements
 - [ ] **M5-T32** — Register `knowledge_base_search`, `incident_record_write`, `audit_log_write` as permitted tools
-- [ ] **M5-T33** — Implement the `ResponsePlan` and `ResponseAction` output parser and database write (all actions initialize with `ApprovalStatus.PendingApproval`)
-- [ ] **M5-T34** — Write unit tests against 5 incident scenarios; verify all high-risk actions are flagged as requiring approval
+- [x] **M5-T33** — Implement the `ResponsePlan` and `ResponseAction` output parser and database write (all actions initialize with `ApprovalStatus.PendingApproval`)
+- [x] **M5-T34** — Write unit tests against 5 incident scenarios; verify all high-risk actions are flagged as requiring approval
 
 ### 5.7 Executive Report Agent
 
-- [ ] **M5-T35** — Implement the Executive Report Agent system prompt with separate generation requirements for technical, executive, and compliance report variants
+- [x] **M5-T35** — Implement the Executive Report Agent system prompt with separate generation requirements for technical, executive, and compliance report variants
 - [ ] **M5-T36** — Register `incident_record_write`, `audit_log_write` as permitted tools
-- [ ] **M5-T37** — Implement the `IncidentReportBundle` output parser and database write
-- [ ] **M5-T38** — Write unit tests against 3 full incident records; verify technical details do not leak into the executive summary
+- [x] **M5-T37** — Implement the `IncidentReportBundle` output parser and database write
+- [x] **M5-T38** — Write unit tests against 3 full incident records; verify technical details do not leak into the executive summary
 
 ### 5.8 Coordinator Agent
 
-- [ ] **M5-T39** — Implement the Coordinator Agent that invokes each specialist agent in the defined sequence: Guardian (ingestion) → Evidence → Threat Intel → MITRE → Risk → Response → Executive Report → Guardian (validation)
+- [x] **M5-T39** — Implement the Coordinator Agent that invokes each specialist agent in the defined sequence: Guardian (ingestion) → Evidence → Threat Intel → MITRE → Risk → Response → Executive Report → Guardian (validation)
 - [ ] **M5-T40** — Implement `IncidentStatus` and `PipelineStage` update logic at each stage transition
-- [ ] **M5-T41** — Implement error routing: on specialist agent failure, log, flag for human review, continue remaining stages where possible
+- [x] **M5-T41** — Implement error routing: on specialist agent failure, log, flag for human review, continue remaining stages where possible
 - [ ] **M5-T42** — Wire the Coordinator Agent to the FastAPI `BackgroundTask` dispatcher
 - [ ] **M5-T43** — Write an end-to-end integration test: submit a synthetic alert → verify a complete incident record is produced with all agent outputs
 
@@ -264,20 +280,20 @@
 
 ### 7.1 Incident Board
 
-- [ ] **M7-T01** — Build `Dashboard` page: metric cards, severity distribution, **Agent Pipeline widget** (Evidence / Threat Intel / MITRE / Risk / Response / Guardian with ✔ ⏳ ○ ✖ states), recent incidents, latest reports
+- [x] **M7-T01** — Build `Dashboard` page: metric cards, severity distribution, **Agent Pipeline widget** (Evidence / Threat Intel / MITRE / Risk / Response / Guardian with ✔ ⏳ ○ ✖ states), recent incidents, latest reports
 - [ ] **M7-T02** — Implement severity filter and status filter
 - [ ] **M7-T03** — Implement periodic polling (every 5 seconds) to reflect agent pipeline progress
-- [ ] **M7-T04** — Make incident rows clickable; navigate to Incident Detail
+- [x] **M7-T04** — Make incident rows clickable; navigate to Incident Detail
 
 ### 7.2 Incident Detail
 
-- [ ] **M7-T05** — Build `IncidentDetail` page with tabs per `08_UI_UX_SPECIFICATION.md`: Overview, Evidence, Timeline, MITRE ATT&CK, Threat Intelligence, Risk Assessment, Response Plan, Guardian Report, Audit Trail
-- [ ] **M7-T05a** — Overview tab: AI Confidence, Investigation Duration, Processing Status, Reports quick access, Agent Pipeline mini-widget
+- [x] **M7-T05** — Build `IncidentDetail` page with tabs per `08_UI_UX_SPECIFICATION.md`: Overview, Evidence, Timeline, MITRE ATT&CK, Threat Intelligence, Risk Assessment, Response Plan, Guardian Report, Audit Trail
+- [x] **M7-T05a** — Overview tab: AI Confidence, Investigation Duration, Processing Status, Reports quick access, Agent Pipeline mini-widget
 - [ ] **M7-T06** — Render evidence bundle: entity list, event count, topology summary, evidence gaps
-- [ ] **M7-T07** — Render MITRE mapping: tactic/technique cards with confidence badges and evidence citations
-- [ ] **M7-T08** — Render timeline: chronological event list with MITRE technique annotations and gap markers
-- [ ] **M7-T09** — Render risk assessment: severity badge, blast radius, affected asset list, risk score, regulatory flags
-- [ ] **M7-T10** — Render response plan: prioritized action list with phase, risk level, and approval status per action
+- [x] **M7-T07** — Render MITRE mapping: tactic/technique cards with confidence badges and evidence citations
+- [x] **M7-T08** — Render timeline: chronological event list with MITRE technique annotations and gap markers
+- [x] **M7-T09** — Render risk assessment: severity badge, blast radius, affected asset list, risk score, regulatory flags
+- [x] **M7-T10** — Render response plan: prioritized action list with phase, risk level, and approval status per action
 
 ### 7.3 Response Approval
 
@@ -306,13 +322,13 @@
 
 *Goal: Build the evaluation harness and run a baseline evaluation pass.*
 
-- [ ] **M8-T01** — Define the evaluation scenario schema: `EvalScenario` with input alert, expected MITRE techniques, expected severity, expected risk score range
+- [x] **M8-T01** — Define the evaluation scenario schema: `EvalScenario` with input alert, expected MITRE techniques, expected severity, expected risk score range
 - [ ] **M8-T02** — Build the labeled evaluation scenario library: minimum 30 scenarios in `evaluation/scenarios/` across all 6 categories
 - [ ] **M8-T03** — Implement the evaluation harness runner (`evaluation/harness/run_eval.py`): submits each scenario, waits for pipeline completion, collects all agent outputs
-- [ ] **M8-T04** — Implement MITRE technique mapping precision/recall calculation
-- [ ] **M8-T05** — Implement risk severity classification accuracy calculation
+- [x] **M8-T04** — Implement MITRE technique mapping precision/recall calculation
+- [x] **M8-T05** — Implement risk severity classification accuracy calculation
 - [ ] **M8-T06** — Implement Guardian injection detection precision/recall calculation against synthetic injection test suite
-- [ ] **M8-T07** — Implement end-to-end latency measurement (alert submission to pipeline complete)
+- [x] **M8-T07** — Implement end-to-end latency measurement (alert submission to pipeline complete)
 - [ ] **M8-T08** — Configure ADK Eval for scenario-based pipeline validation
 - [ ] **M8-T09** — Run baseline evaluation pass; record results in `05_PROGRESS.md`
 - [ ] **M8-T10** — Iterate on agent prompts based on evaluation findings; document changes in `04_DECISIONS.md`

@@ -13,6 +13,7 @@ COPY backend/pyproject.toml ./
 COPY backend/app ./app
 COPY agents /agents
 COPY mcp /mcp
+COPY evaluation /evaluation
 
 RUN pip install --no-cache-dir . \
     && mkdir -p /app/data /app/storage/uploads

@@ -26,6 +26,7 @@ class ToolDefinition(BaseModel):
 
     name: str
     description: str
+    version: str = "1.0.0"
     input_schema: dict[str, Any]
     output_schema: dict[str, Any]
     input_model: type[BaseModel]
@@ -57,6 +58,10 @@ class ToolRegistry:
         """Return the number of registered tools."""
         return len(self._tools)
 
+    def list_tool_definitions(self) -> list[ToolDefinition]:
+        """Return all registered tool definitions sorted by name."""
+        return [self._tools[name] for name in self.list_tools()]
+
     def invoke(self, name: str, payload: dict[str, Any], db: Session) -> ToolResult[Any]:
         """Validate input, execute a tool handler, and return a structured result."""
         tool = self.get_tool(name)
@@ -86,6 +91,7 @@ def register_tool(
     description: str,
     input_model: type[BaseModel],
     output_model: type[BaseModel],
+    version: str = "1.0.0",
 ) -> Callable[[Callable[[BaseModel, Session], BaseModel]], Callable[..., BaseModel]]:
     """Decorator that registers an MCP tool with input and output schemas."""
 
@@ -96,6 +102,7 @@ def register_tool(
             ToolDefinition(
                 name=name,
                 description=description,
+                version=version,
                 input_schema=input_model.model_json_schema(),
                 output_schema=output_model.model_json_schema(),
                 input_model=input_model,

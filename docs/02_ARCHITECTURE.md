@@ -2,10 +2,30 @@
 
 **Project Name:** Oz AI
 **Version:** 1.0 (MVP)
-**Status:** Architecture Frozen — Pre-Development
-**Date:** 2026-06-26
+**Status:** Sprint 3 Complete — reflects implemented system
+**Date:** 2026-06-27
 
-> This document is the authoritative architecture reference for the Oz AI platform. It is frozen prior to development. Any deviation from this architecture must be approved by the team and recorded as an ADR in `04_DECISIONS.md` before implementation begins.
+> This document is the authoritative architecture reference for Oz AI. Sections marked **(implemented)** describe the running system. Sections marked **(planned)** describe Sprint 4 or post-MVP work. Deviations from original pre-development design are recorded in `04_DECISIONS.md`.
+
+---
+
+## Implementation status (2026-06-27)
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| FastAPI backend (35 endpoints) | Implemented | No API authentication |
+| 15 database tables | Implemented | Schema differs from original entity names |
+| 8 AI agents | Implemented | LLM via `google-genai`; fallbacks when no API key |
+| MCP registry (5 tools) | Implemented | Agents do not call MCP tools at runtime |
+| Investigation workflow | Implemented | `POST /api/v1/investigations/run` |
+| Timeline Engine | Implemented | Separate `TimelineService` stage in workflow |
+| Evaluation framework | Implemented | Offline benchmarks + API dashboard |
+| Guardian validation | Implemented | Between specialist stages in workflow |
+| Human approval workflow | Planned | M6 not started |
+| Webhook ingestion | Planned | M3-T14–T16 not done |
+| 10 domain MCP tools | Planned | Only 5 operational tools exist |
+| ADK session checkpointing | Planned | State in DB via services, not ADK sessions |
+| API authentication | Planned | M1-T25 not done |
 
 ---
 
@@ -33,45 +53,44 @@ Oz AI is organized into five logical layers:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         INGESTION LAYER                              │
-│   REST API  ·  Webhook Receiver  ·  Alert Simulator (scripts/)      │
+│                         INGESTION LAYER (partial)                    │
+│   REST API (incidents, logs)  ·  Alert Simulator — planned         │
 └──────────────────────────────┬──────────────────────────────────────┘
-                               │  Normalized Alert Payload
+                               │  Incident / log payloads
                                ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          BACKEND LAYER                               │
-│   FastAPI Application  ·  Business Services  ·  SQLAlchemy ORM      │
+│                          BACKEND LAYER (implemented)                 │
+│   FastAPI  ·  Services  ·  Repositories  ·  Investigation Workflow   │
 └──────────────────────────────┬──────────────────────────────────────┘
-                               │  Agent Task Dispatch
+                               │  Explicit investigation trigger
                                ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          AGENT LAYER                                 │
-│   Google ADK Runtime  ·  Coordinator Agent  ·  Specialist Agents    │
-│   Guardian Agent  ·  MCP Tool Servers  ·  Session State             │
+│                          AGENT LAYER (implemented)                   │
+│   8 agents  ·  Guardian between stages  ·  Timeline + Evaluation     │
+│   MCP registry (5 tools) — agents call services directly today       │
 └──────────────────────────────┬──────────────────────────────────────┘
-                               │  Structured Results  ·  Audit Events
+                               │  Structured results  ·  Audit events
                                ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                       PERSISTENCE LAYER                              │
-│   SQLite (MVP)  ·  Incident Records  ·  Audit Trail  ·  Reports     │
+│                       PERSISTENCE LAYER (implemented)                │
+│   SQLite  ·  15 tables  ·  Audit logs  ·  Evaluation metrics         │
 └──────────────────────────────┬──────────────────────────────────────┘
-                               │  Data Queries
+                               │  REST queries
                                ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      PRESENTATION LAYER                              │
-│   React Dashboard  ·  Incident Board  ·  Approval Workflows         │
-│   MITRE Viewer  ·  Timeline View  ·  Executive Reports              │
+│                      PRESENTATION LAYER (partial)                    │
+│   React dashboard  ·  Investigation Runner  ·  Evaluation page      │
+│   Approval workflows — planned                                       │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-**End-to-end data flow:**
-1. An alert enters through the ingestion layer (API call, webhook, or simulator script).
-2. The backend normalizes the payload, persists an `Incident` record, and dispatches an agent task.
-3. The Coordinator Agent orchestrates the eight-stage agent pipeline in sequence.
-4. Each specialist agent writes its findings to the incident record and appends audit events.
-5. The Guardian Agent validates each stage's output before it is persisted or surfaced.
-6. The frontend reflects the incident state as agents complete their work.
-7. Engineers review and approve or reject agent recommendations through the dashboard.
+**End-to-end data flow (implemented):**
+1. An operator creates an incident and uploads logs via the REST API or UI.
+2. The operator triggers an investigation via `POST /api/v1/investigations/run` or the Investigation Runner UI.
+3. `InvestigationWorkflowService` runs the Coordinator-led pipeline with Guardian validation between specialist stages.
+4. Timeline Engine and Evaluation Engine run at the end of the workflow.
+5. Results are persisted to incident-related tables and surfaced in Incident Detail tabs.
+6. Human approval of response actions is **not yet** enforced in the UI or API.
 
 ---
 
@@ -131,12 +150,10 @@ Oz AI is organized into five logical layers:
     │    └─────────────────────────────────────────────────────────┘ │
     │                                                               │
     │  ┌─────────────────────────────────────────────────────────┐ │
-    │  │                    MCP Tool Layer                         │ │
-    │  │  evidence_collector  ·  knowledge_base_search            │ │
-    │  │  threat_intel_lookup  ·  mitre_attack_search             │ │
-    │  │  system_topology_query  ·  incident_record_write         │ │
-    │  │  audit_log_write  ·  pii_scanner                        │ │
-    │  │  prompt_injection_detector  ·  notification_dispatch     │ │
+    │  │                    MCP Tool Layer (5 tools)               │ │
+    │  │  health  ·  list_incidents  ·  incident_details          │ │
+    │  │  list_logs  ·  system_info                               │ │
+    │  │  (domain tools planned — agents use services today)      │ │
     │  └─────────────────────────────────────────────────────────┘ │
     └─────────────────────────────────────────────────────────────┘
                           │
@@ -442,26 +459,36 @@ The Guardian Agent operates as a cross-cutting safety validator. It is invoked a
 
 ---
 
-## 5. MCP Tool Layer
+## 5. MCP Tool Layer (implemented — partial)
 
-All agent-to-external-system interactions are mediated exclusively by MCP (Model Context Protocol) tool servers. This layer provides a standardized, auditable, and testable interface between agents and the systems they interact with.
+The MCP layer in `mcp/` provides a registry and five operational tools for health and data introspection. **Agents do not invoke MCP tools at runtime**; they call backend services directly. The planned domain tool set remains backlog work (Milestone 4).
 
-### Tool Inventory
+### Registered tools (5)
 
-| Tool Name | Purpose | Permitted Agents |
+| Tool Name | Purpose | Used by agents at runtime |
 |---|---|---|
-| `evidence_collector` | Queries simulated log stores and alert APIs for correlated evidence | Evidence Agent |
-| `knowledge_base_search` | Semantic search over incident runbooks, playbooks, and past incident summaries | Threat Intelligence, MITRE Mapping, Risk Assessment, Response Planning Agents |
-| `threat_intel_lookup` | Looks up IOCs (IPs, hashes, domains) against the local threat intelligence knowledge base | Threat Intelligence Agent |
-| `mitre_attack_search` | Searches the MITRE ATT&CK knowledge base for tactics, techniques, and sub-techniques | MITRE Mapping Agent |
-| `system_topology_query` | Retrieves asset relationships, ownership, and criticality data | Evidence Agent, Risk Assessment Agent |
-| `incident_record_write` | Writes structured agent findings to the incident record in the database | All specialist agents (via Coordinator authorization) |
-| `audit_log_write` | Appends an immutable event to the audit trail | All agents, Coordinator |
-| `pii_scanner` | Scans text content for personally identifiable information patterns | Guardian Agent |
-| `prompt_injection_detector` | Evaluates text for prompt injection and instruction hijacking patterns | Guardian Agent |
-| `notification_dispatch` | Sends a notification to a configured channel (Slack webhook stub, console log fallback) | Coordinator Agent (post-approval only) |
+| `health` | Application health status | No |
+| `list_incidents` | Paginated incident list via `IncidentService` | No |
+| `incident_details` | Single incident by ID | No |
+| `list_logs` | Uploaded log file metadata | No |
+| `system_info` | Version, database, ADK, MCP status | No |
 
-### Tool Design Principles
+### Planned tools (not implemented)
+
+| Tool Name | Planned agents |
+|---|---|
+| `evidence_collector` | Evidence Agent |
+| `knowledge_base_search` | Threat Intel, MITRE, Risk, Response |
+| `threat_intel_lookup` | Threat Intelligence Agent |
+| `mitre_attack_search` | MITRE Mapping Agent |
+| `system_topology_query` | Evidence, Risk |
+| `incident_record_write` | All specialist agents |
+| `audit_log_write` | All agents |
+| `pii_scanner` | Guardian Agent (implemented in `agents/guardian/` directly) |
+| `prompt_injection_detector` | Guardian Agent (implemented in `agents/guardian/` directly) |
+| `notification_dispatch` | Coordinator (post-approval) |
+
+### Tool design principles (target)
 
 1. **Single responsibility:** Each tool does one thing and does it well. No tool aggregates multiple concerns.
 2. **Structured responses:** Every tool returns a typed response: `{success: bool, data: T, error: str | None}`.
@@ -471,19 +498,19 @@ All agent-to-external-system interactions are mediated exclusively by MCP (Model
 
 ---
 
-## 6. ADK Overview
+## 6. ADK Overview (implemented — partial)
 
-Oz AI's agent orchestration is built on **Google Agent Development Kit (ADK)**.
+Oz AI initializes **Google ADK** at startup (`backend/app/core/adk_runtime.py`). Agent modules define ADK-compatible configuration. **LLM calls use `google.genai.Client`** via agent services. ADK session state, MCP tool binding for agents, and `adk eval` are not yet implemented.
 
-### ADK Patterns Used
+### ADK patterns
 
-| ADK Pattern | Oz AI Usage |
+| ADK pattern | Oz AI usage (current) |
 |---|---|
-| `LlmAgent` | All specialist agents are `LlmAgent` instances with defined instructions and tool access |
-| Custom Coordinator | The Coordinator Agent manages pipeline sequencing, invoking specialists and accumulating state |
-| Session State | All inter-agent data lives in the ADK session context, checkpointed to the database at each stage |
-| MCP Tool Server | All tools are MCP servers registered with the ADK agent runtime |
-| `adk eval` | The evaluation harness uses ADK Eval for scenario-based pipeline assessment |
+| ADK runtime init | Startup validation; Coordinator agent config loaded |
+| Agent config objects | Each agent in `agents/` has prompt and schema definitions |
+| `google.genai` | Direct LLM calls with rule-based fallbacks |
+| MCP tool server | Registry with 5 tools; not wired to agent runtime |
+| `adk eval` | Planned (M8-T08) |
 
 ### Agent-to-ADK Mapping
 
@@ -497,53 +524,68 @@ Each specialist agent corresponds to one `LlmAgent` configuration file in `agent
 
 ## 7. Backend Architecture
 
-### Framework
+The backend is a **FastAPI** application running with **Uvicorn**. Investigation workflows run synchronously within the request handler (`InvestigationWorkflowService`). There is no `BackgroundTasks` agent dispatch on incident creation.
 
-The backend is a **FastAPI** application running with **Uvicorn**. All routes are async. Background agent tasks run as Python async tasks dispatched by FastAPI's `BackgroundTasks` mechanism.
-
-### Application Layers
+### Application layers (implemented)
 
 ```
-backend/
-│
-├── api/          # FastAPI routers, HTTP layer, request/response validation
-├── services/     # Business logic and orchestration (no direct DB access from routes)
-├── models/       # SQLAlchemy ORM models (database schema definitions)
-├── schemas/      # Pydantic schemas (API contracts and internal data models)
-├── core/         # Configuration, database session, dependency injection, settings
-└── tests/        # Backend unit and integration tests
+backend/app/
+├── api/v1/       # HTTP routers (35 endpoints)
+├── services/     # Business logic, agent services, investigation workflow
+├── models/       # 15 SQLAlchemy ORM models
+├── schemas/      # Pydantic API contracts
+├── repositories/ # Data access
+├── core/         # Config, logging, ADK/MCP runtimes
+└── db/           # Session and engine
 ```
 
-### Background Agent Dispatch
+### Investigation dispatch (implemented)
 
-When an incident is created via `POST /api/v1/incidents`, the backend:
-1. Validates the request payload with Pydantic.
-2. Persists the `Incident` record via the `IncidentService`.
-3. Dispatches the agent pipeline as a FastAPI `BackgroundTask`.
-4. Returns the incident ID to the caller immediately (non-blocking).
+When an operator calls `POST /api/v1/investigations/run`:
+1. Validates `incident_id` (and optional `log_file_id`).
+2. Creates an `InvestigationRun` record.
+3. Runs the full pipeline synchronously: Coordinator → specialists with Guardian → Timeline → Evaluation.
+4. Returns the investigation package with per-stage results.
 
-The agent pipeline runs asynchronously. The frontend polls for status updates.
+Individual agent endpoints (`POST /api/v1/agents/*`) allow running single agents without the full workflow.
 
-### API Design
+### API design (implemented — 35 endpoints)
 
-All routes are under `/api/v1/`. The API follows a resource-oriented design:
-
-| Resource | Endpoint | Method | Description |
+| Resource | Endpoint | Method | Status |
 |---|---|---|---|
-| Incidents | `/api/v1/incidents` | GET | List incidents with filters |
-| Incidents | `/api/v1/incidents` | POST | Submit a new alert payload |
-| Incidents | `/api/v1/incidents/{id}` | GET | Get full incident record |
-| Evidence | `/api/v1/incidents/{id}/evidence` | GET | Get evidence bundle |
-| MITRE | `/api/v1/incidents/{id}/mitre` | GET | Get ATT&CK mapping |
-| Timeline | `/api/v1/incidents/{id}/timeline` | GET | Get reconstructed timeline |
-| Risk | `/api/v1/incidents/{id}/risk` | GET | Get risk assessment |
-| Response | `/api/v1/incidents/{id}/response` | GET | Get response plan |
-| Response | `/api/v1/incidents/{id}/response/approve` | POST | Approve response plan |
-| Response | `/api/v1/incidents/{id}/response/reject` | POST | Reject response plan |
-| Reports | `/api/v1/incidents/{id}/reports` | GET | Get all incident reports |
-| Audit | `/api/v1/incidents/{id}/audit` | GET | Get audit trail |
-| Guardian | `/api/v1/incidents/{id}/guardian` | GET | Get Guardian Agent report |
-| System | `/api/v1/health` | GET | Service health check |
+| Root | `/` | GET | Implemented |
+| Health | `/api/v1/health` | GET | Implemented |
+| AI health | `/api/v1/ai/health` | GET | Implemented |
+| Dashboard | `/api/v1/dashboard/stats` | GET | Implemented |
+| System | `/api/v1/system/tables` | GET | Implemented |
+| System | `/api/v1/system/mcp` | GET | Implemented |
+| Incidents | `/api/v1/incidents` | GET, POST | Implemented |
+| Incidents | `/api/v1/incidents/{id}` | GET, PUT, DELETE | Implemented |
+| Incidents | `/api/v1/incidents/{id}/mitre` | GET | Implemented |
+| Incidents | `/api/v1/incidents/{id}/threat-intelligence` | GET | Implemented |
+| Incidents | `/api/v1/incidents/{id}/risk` | GET | Implemented |
+| Incidents | `/api/v1/incidents/{id}/response` | GET | Implemented |
+| Incidents | `/api/v1/incidents/{id}/executive-report` | GET | Implemented |
+| Incidents | `/api/v1/incidents/{id}/timeline` | GET | Implemented |
+| Incidents | `/api/v1/incidents/{id}/timeline/export` | GET | Implemented |
+| Incidents | `/api/v1/incidents/{id}/guardian-audits` | GET | Implemented |
+| Logs | `/api/v1/logs/upload` | POST | Implemented |
+| Logs | `/api/v1/logs` | GET | Implemented |
+| Logs | `/api/v1/logs/{id}` | GET, DELETE | Implemented |
+| Agents | `/api/v1/agents/orchestrate` | POST | Implemented |
+| Agents | `/api/v1/agents/evidence` | POST | Implemented |
+| Agents | `/api/v1/agents/threat-intelligence` | POST | Implemented |
+| Agents | `/api/v1/agents/mitre` | POST | Implemented |
+| Agents | `/api/v1/agents/risk` | POST | Implemented |
+| Agents | `/api/v1/agents/response` | POST | Implemented |
+| Agents | `/api/v1/agents/executive-report` | POST | Implemented |
+| Agents | `/api/v1/agents/guardian/validate` | POST | Implemented |
+| Investigations | `/api/v1/investigations/run` | POST | Implemented |
+| Investigations | `/api/v1/investigations/runs/{run_id}` | GET | Implemented |
+| Evaluation | `/api/v1/evaluation` | GET | Implemented |
+| Evaluation | `/api/v1/evaluation/{agent_name}` | GET | Implemented |
+| Response approve/reject | `/api/v1/incidents/{id}/response/approve` | POST | Planned |
+| Webhook ingestion | — | POST | Planned |
 
 ---
 
@@ -575,17 +617,22 @@ frontend/
 └── public/
 ```
 
-### Key UI Pages
+### Key UI pages (implemented)
 
-| Page | Purpose |
-|---|---|
-| **Incident Board** | Real-time list of all active and recent incidents with severity indicators and pipeline status |
-| **Incident Detail** | Full incident record: evidence summary, threat intel, MITRE mapping, timeline, risk, response plan, reports |
-| **MITRE ATT&CK Viewer** | Visual display of mapped tactics, techniques, and sub-techniques with supporting evidence |
-| **Timeline View** | Chronological event timeline with MITRE annotations and gap indicators |
-| **Response Approval** | Human-in-the-loop approval workflow for response plan actions |
-| **Audit Trail** | Chronological log of all agent actions, tool calls, and human decisions |
-| **Executive Reports** | Downloadable technical, executive, and compliance report views |
+| Route | Page | Status |
+|---|---|---|
+| `/` | Dashboard with metrics | Implemented |
+| `/incidents` | Incident list | Implemented |
+| `/incidents/:id` | Incident detail (8 tabs) | Implemented |
+| `/incidents/:id/investigate` | Investigation Runner | Implemented |
+| `/logs` | Log upload and listing | Implemented |
+| `/evaluation` | Agent evaluation dashboard | Implemented |
+| `/reports` | Reports hub | Placeholder |
+| `/settings` | Settings | Placeholder |
+
+Incident Detail tabs: Overview, Timeline, Threat Intelligence, MITRE, Risk, Response, Executive Report, Guardian Audit.
+
+Response approval workflow UI is **not implemented**.
 
 ### State Management
 
@@ -596,110 +643,29 @@ The MVP uses React's built-in `useState` and `useEffect` hooks with the native `
 ## 9. Folder Structure
 
 ```
-oz-ai/
-│
-├── backend/                  # FastAPI REST API, business logic, database layer
-│   ├── api/                  #   HTTP routers and request/response schemas
-│   ├── services/             #   Business logic and orchestration
-│   ├── models/               #   SQLAlchemy ORM models
-│   ├── schemas/              #   Pydantic data schemas
-│   ├── core/                 #   Configuration, DB session, dependency injection
-│   └── tests/                #   Backend unit and integration tests
-│
-├── frontend/                 # React TypeScript dashboard
-│   ├── src/
-│   │   ├── components/       #   Reusable UI component library
-│   │   ├── pages/            #   Route-level page components
-│   │   ├── hooks/            #   Custom React hooks
-│   │   ├── services/         #   Typed API client
-│   │   ├── types/            #   TypeScript interface definitions
-│   │   └── utils/            #   Utility functions
-│   └── public/               #   Static assets
-│
-├── agents/                   # Google ADK agent definitions and orchestration logic
-│   ├── coordinator/          #   Coordinator Agent configuration and logic
-│   ├── evidence/             #   Evidence Agent
-│   ├── threat_intel/         #   Threat Intelligence Agent
-│   ├── mitre_mapping/        #   MITRE Mapping Agent
-│   ├── risk_assessment/      #   Risk Assessment Agent
-│   ├── response_planning/    #   Response Planning Agent
-│   ├── executive_report/     #   Executive Report Agent
-│   ├── guardian/             #   Guardian Agent (safety and oversight)
-│   └── shared/               #   Shared agent utilities, base classes, prompt templates
-│
-├── mcp/                      # MCP tool server implementations
-│   ├── evidence_collector/
-│   ├── knowledge_base_search/
-│   ├── threat_intel_lookup/
-│   ├── mitre_attack_search/
-│   ├── system_topology_query/
-│   ├── incident_record_write/
-│   ├── audit_log_write/
-│   ├── pii_scanner/
-│   ├── prompt_injection_detector/
-│   └── notification_dispatch/
-│
-├── datasets/                 # Synthetic incident datasets for development and evaluation
-│   ├── alerts/               #   Sample alert payloads
-│   ├── logs/                 #   Simulated log data
-│   ├── topology/             #   Simulated system topology maps
-│   ├── threat_intel/         #   Local threat intelligence knowledge base
-│   └── mitre/                #   MITRE ATT&CK knowledge base (local subset)
-│
-├── evaluation/               # Agent evaluation harness and metrics
-│   ├── scenarios/            #   Labeled evaluation scenarios (input + expected outputs)
-│   ├── harness/              #   Evaluation runner scripts
-│   └── results/              #   Evaluation run outputs (gitignored, generated at runtime)
-│
-├── design/                   # Architecture diagrams, data flows, threat models, wireframes
-│   ├── SYSTEM_FLOW.md
-│   ├── DATA_FLOW.md
-│   ├── SEQUENCE_DIAGRAM.md
-│   ├── THREAT_MODEL.md
-│   └── UI_WIREFRAMES.md
-│
-├── docs/                     # Project documentation
-│   ├── 01_PROJECT_BRIEF.md
-│   ├── 02_ARCHITECTURE.md
-│   ├── 03_TASKS.md
-│   ├── 04_DECISIONS.md
-│   ├── 05_PROGRESS.md
-│   ├── 06_PRODUCT_REQUIREMENTS.md
-│   ├── 07_SUBMISSION_CHECKLIST.md
-│   └── 08_UI_UX_SPECIFICATION.md
-│
-├── scripts/                  # Developer utility scripts
-│   ├── simulate_alert.py     #   Generates and submits synthetic alert payloads
-│   ├── seed_datasets.py      #   Seeds local knowledge bases and topology data
-│   └── reset_db.py           #   Resets the SQLite database for a clean development state
-│
-├── tests/                    # Integration and end-to-end tests
-│   ├── integration/          #   Cross-service integration tests
-│   └── e2e/                  #   Full pipeline end-to-end tests
-│
-├── docker/                   # Dockerfiles for each service
-│   ├── Dockerfile.backend
-│   └── Dockerfile.frontend
-│
-├── .github/                  # GitHub repository templates and community standards
-│   ├── ISSUE_TEMPLATE/
-│   │   ├── BUG_REPORT.md
-│   │   └── FEATURE_REQUEST.md
-│   ├── PULL_REQUEST_TEMPLATE.md
-│   ├── CODEOWNERS
-│   ├── CODE_OF_CONDUCT.md
-│   ├── CONTRIBUTING.md
-│   └── SECURITY.md
-│
-├── .cursor/                  # Cursor AI coding rules
-│   └── rules.md
-│
-├── README.md                 # Project overview, quickstart, architecture summary
-├── LICENSE                   # MIT License
-├── .gitignore                # Python, Node, Docker, OS artifact exclusions
-├── .env.example              # All required environment variable keys (no values)
-├── pyproject.toml            # Python project metadata and backend dependencies
-└── docker-compose.yml        # Local development orchestration
+Kaggle/
+├── agents/                   # 8 agent implementations
+│   ├── coordinator/
+│   ├── evidence/
+│   ├── threat_intelligence/
+│   ├── mitre/
+│   ├── risk/
+│   ├── response/
+│   ├── executive_report/
+│   └── guardian/
+├── backend/app/              # FastAPI application (api, services, models, schemas)
+├── evaluation/               # Evaluation framework (engine, benchmarks, results/)
+├── frontend/src/             # React dashboard pages and services
+├── mcp/                      # MCP registry + 5 operational tools
+├── datasets/                 # Mostly empty — planned synthetic data
+├── docker/                   # Dockerfile.backend, Dockerfile.frontend
+├── docs/                     # Project documentation (+ 08_MILESTONES.md)
+├── scripts/                  # dev.sh, dev-backend.sh, dev-frontend.sh
+├── storage/uploads/          # Log file storage
+├── tests/                    # Backend integration tests
+├── design/                   # Architecture diagrams (may lag implementation)
+├── docker-compose.yml
+└── README.md
 ```
 
 ---
@@ -710,27 +676,31 @@ oz-ai/
 
 The MVP uses **SQLite** via **SQLAlchemy** async driver (`aiosqlite`). SQLite was chosen to eliminate infrastructure complexity. The SQLAlchemy ORM layer abstracts the database engine entirely; migration to PostgreSQL requires only a connection string change.
 
-### Core Entities
+### Core tables (15 — implemented)
 
-| Entity | Description |
+| Table / model | Description |
 |---|---|
-| `Incident` | Primary record. Tracks status, severity, timestamps, and pipeline stage. |
-| `EvidenceBundle` | Structured output of the Evidence Agent: events, entities, topology context, gaps. |
-| `ThreatIntelReport` | Threat intelligence enrichment: IOC matches, threat actor associations, confidence scores. |
-| `MITREMapping` | ATT&CK technique mappings with tactic, technique ID, confidence, and evidence citations. |
-| `IncidentTimeline` | Chronologically ordered event list with MITRE annotations and gap markers. |
-| `RiskAssessment` | Severity, blast radius, affected assets, regulatory exposure, risk score. |
-| `ResponsePlan` | Full response plan with individual `ResponseAction` records and approval status. |
-| `ResponseAction` | A single recommended action with approval status, risk level, and execution tracking. |
-| `IncidentReportBundle` | Technical report, executive summary, and compliance summary for the incident. |
-| `GuardianReport` | Guardian Agent validation results: injection scan, PII scan, permission audit, approval gate. |
-| `AuditEvent` | Immutable, append-only event log. Every agent action, tool call, and human decision. |
+| `incidents` | Primary incident record (status, severity, metadata) |
+| `log_files` | Uploaded log file metadata and storage paths |
+| `evidence` | Evidence Agent output for an incident |
+| `threat_intelligence_findings` | IOC and reputation findings |
+| `mitre_findings` | ATT&CK technique mappings |
+| `risk_assessments` | Severity, blast radius, risk score |
+| `response_plans` | Response plan JSON and metadata |
+| `executive_reports` | Technical and executive summaries |
+| `timeline_events` | Chronological timeline events |
+| `guardian_audits` | Guardian validation records per stage |
+| `agent_executions` | Per-agent execution tracking |
+| `audit_logs` | Append-only audit events |
+| `investigations` | Investigation metadata |
+| `investigation_runs` | End-to-end workflow run records |
+| `evaluation_metrics` | Persisted agent evaluation scores |
 
-### Integrity Constraints
+### Integrity constraints (target vs implemented)
 
-- `AuditEvent` records are never updated or deleted. The ORM enforces this with an append-only service pattern.
-- `ResponseAction.approval_status` can only transition from `PendingApproval` → `Approved` or `PendingApproval` → `Rejected`. No other transitions are permitted.
-- `Incident.status` follows a defined state machine. Invalid transitions are rejected at the service layer.
+- `audit_logs` — append-only pattern in services; no update/delete endpoints.
+- Response plan approval transitions — **not enforced** (approval API not implemented).
+- `Incident.status` — basic state updates via `IncidentService`; full approval state machine not implemented.
 
 ---
 
@@ -744,18 +714,18 @@ The MVP uses **SQLite** via **SQLAlchemy** async driver (`aiosqlite`). SQLite wa
 - **Input validation everywhere.** All external inputs are validated with Pydantic schemas before any processing.
 - **Audit trail integrity.** Append-only; no update or delete on `AuditEvent` records.
 
-### MVP Security Controls
+### MVP security controls (implemented vs planned)
 
-| Control | Implementation |
+| Control | Status |
 |---|---|
-| API Authentication | Bearer token (API key) validation on all `/api/v1/` routes |
-| Input Validation | Pydantic strict mode on all request schemas |
-| Prompt Injection Defense | Guardian Agent `prompt_injection_detector` tool on all ingested payloads |
-| PII Protection | Guardian Agent `pii_scanner` on all agent outputs before persistence |
-| Secret Handling | All secrets via environment variables; `.env` never committed |
-| Audit Trail | Append-only `AuditEvent` table enforced at ORM service layer |
-| CORS | Configured to allow only the frontend origin |
-| Tool Permissions | MCP layer enforces permitted tool sets per agent |
+| API authentication | **Not implemented** — all endpoints are open |
+| Input validation | Pydantic on all request schemas |
+| Prompt injection defense | Guardian rule-based detection in `agents/guardian/` |
+| PII protection | Guardian PII masking when `MASK_PII=true` |
+| Secret handling | Environment variables only |
+| Audit trail | `audit_logs` table; append-only services |
+| CORS | Permissive (`allow_origins=["*"]`) for development |
+| Tool permissions | **Not implemented** at MCP layer |
 
 ---
 

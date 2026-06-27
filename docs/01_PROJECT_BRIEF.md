@@ -5,8 +5,8 @@
 **Version:** 1.0 (MVP)
 **Competition:** Kaggle — AI Agents Intensive Capstone
 **Track:** Agents for Business
-**Date:** 2026-06-26
-**Status:** Architecture Frozen — Pre-Development
+**Date:** 2026-06-27
+**Status:** Sprint 3 Complete — Documentation sync in progress
 
 ---
 
@@ -69,8 +69,8 @@ Oz AI is purpose-built to demonstrate mastery of the Kaggle competition's core e
 | **Real-world business impact** | Targets enterprise incident response — a documented, multi-billion-dollar problem with measurable MTTR improvement |
 | **Multi-agent coordination** | Eight specialized agents operating under a Coordinator in a directed, state-managed pipeline |
 | **Google ADK usage** | All agent orchestration is built natively on Google Agent Development Kit |
-| **MCP tool use** | All agent-to-system interactions are mediated by MCP tool servers |
-| **Human-in-the-loop design** | Explicit human approval gates enforced by the Guardian Agent before any consequential action |
+| **MCP tool use** | MCP registry with 5 operational tools; agents call backend services directly today |
+| **Human-in-the-loop design** | Approval gates documented; API/UI enforcement planned for Sprint 4 |
 | **Security and safety** | Guardian Agent provides prompt injection detection, PII scanning, and output validation |
 | **Evaluation pipeline** | Structured scenario-based evaluation with precision/recall metrics for agent outputs |
 | **Deployability** | Single `docker compose up` command; self-contained environment |
@@ -83,13 +83,13 @@ This section maps each explicit competition requirement to the corresponding Oz 
 
 ### Google ADK
 
-Oz AI's entire agent orchestration layer is built on the Google Agent Development Kit. The Coordinator Agent is implemented as an ADK orchestrator. All eight specialist agents are implemented as ADK `LlmAgent` instances. ADK session management handles state persistence across the agent pipeline.
+Google ADK is installed and initialized at startup. Agent modules use ADK configuration objects; LLM calls use `google.genai.Client`. ADK session checkpointing and `adk eval` are not yet implemented.
 
-**Implementation location:** `agents/`
+**Implementation location:** `agents/`, `backend/app/core/adk_runtime.py`
 
 ### MCP (Model Context Protocol)
 
-All agent-to-external-system interactions — log queries, threat intelligence lookups, knowledge base searches, MITRE ATT&CK queries, audit writes, and notification dispatch — are implemented as MCP tools registered with the ADK runtime. No agent contains direct I/O logic.
+Five operational MCP tools are registered (`health`, `list_incidents`, `incident_details`, `list_logs`, `system_info`). Planned domain tools (`evidence_collector`, `threat_intel_lookup`, etc.) are not implemented. Agents invoke backend services directly, not MCP tools at runtime.
 
 **Implementation location:** `mcp/`
 
@@ -118,11 +118,11 @@ The Guardian Agent is a dedicated safety layer responsible for:
 - Enforcing the human approval gate before any action in the `ResponsePlan` is marked as executable.
 - Validating that final outputs meet safe-to-display criteria.
 
-**Implementation location:** `agents/guardian_agent/`
+**Implementation location:** `agents/guardian/`, `backend/app/services/orchestration_guardian.py`
 
 ### Evaluation
 
-A dedicated evaluation harness runs synthetic incident scenarios against the full agent pipeline and produces quantitative metrics: triage precision/recall, MITRE mapping accuracy, timeline reconstruction quality, and response plan relevance. ADK Eval tooling is used for scenario-based pipeline validation.
+An offline evaluation framework benchmarks nine agent stages, calculates weighted health scores, persists metrics to `evaluation_metrics`, and exposes results via `/api/v1/evaluation`. A 30-scenario labeled library and ADK Eval integration are planned.
 
 **Implementation location:** `evaluation/`
 
@@ -138,9 +138,9 @@ docker compose up
 
 ### Human in the Loop
 
-The frontend dashboard presents every incident with its full agent analysis. The Response Planning workflow includes an explicit approval gate: no action from the `ResponsePlan` advances to an executable state without a human reviewer approving it in the dashboard. This gate is enforced at both the API layer and the Guardian Agent layer.
+The frontend presents incident analysis across tabbed views and an Investigation Runner. Response plan approval UI and API endpoints (`approve`/`reject`) are **not yet implemented** — planned for Sprint 4.
 
-**Implementation location:** `frontend/`, `backend/api/`, `agents/guardian_agent/`
+**Implementation location:** `frontend/`, `backend/app/api/v1/`
 
 ---
 

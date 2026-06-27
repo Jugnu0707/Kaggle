@@ -30,6 +30,15 @@ class InvestigationStatus(str, Enum):
     FAILED = "Failed"
 
 
+class InvestigationRunStatus(str, Enum):
+    """End-to-end investigation run lifecycle status."""
+
+    RUNNING = "running"
+    COMPLETED = "completed"
+    PARTIAL = "partial"
+    FAILED = "failed"
+
+
 class UploadStatus(str, Enum):
     """Log file upload lifecycle status."""
 

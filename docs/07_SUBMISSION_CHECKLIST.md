@@ -5,8 +5,24 @@
 **Track:** Agents for Business
 **Target Submission Date:** TBD
 **Version:** 1.0 (MVP)
+**Last Reviewed:** 2026-06-27
 
-> This document is the authoritative pre-submission checklist for the Oz AI competition entry. Every item must be verified and checked before submission. No item is optional. This checklist is reviewed during Milestone 9 (Polish and Submission).
+> This document is the authoritative pre-submission checklist for the Oz AI competition entry. Every item must be verified and checked before submission. Items marked **(gap)** are known implementation gaps as of Sprint 3.5.
+
+### Implementation snapshot (2026-06-27)
+
+| Area | Ready? | Notes |
+|------|--------|-------|
+| Repository structure | Partial | Matches implementation; `evaluation/` not in Docker backend image |
+| README | Partial | Updated Sprint 3.5; no evaluation results summary or demo video yet |
+| 8 agents | Yes | All implemented with tests |
+| MCP (10 tools planned) | **(gap)** | Only 5 operational tools; agents don't use MCP at runtime |
+| ADK session / adk eval | **(gap)** | ADK init only; no session checkpointing or adk eval |
+| Investigation workflow | Yes | Full pipeline via investigations API |
+| Evaluation framework | Partial | Offline benchmarks; no 30-scenario library |
+| Human approval gate | **(gap)** | Not implemented in API or UI |
+| API authentication | **(gap)** | All endpoints open |
+| Submission notebook / video | **(gap)** | Not started |
 
 ---
 

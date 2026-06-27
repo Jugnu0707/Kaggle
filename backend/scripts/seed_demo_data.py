@@ -1,10 +1,12 @@
-"""Seed Oz AI with demo cybersecurity incidents, evidence, logs, and audit records.
+"""Seed Oz AI with demo cybersecurity incidents, evidence, logs, and investigations.
 
 Run manually from the repository root:
 
-    python backend/scripts/seed_demo_data.py
+    python scripts/reset_demo.py
 
-The script is idempotent — re-running it will not create duplicates.
+Or seed only (idempotent, no wipe):
+
+    python backend/scripts/seed_demo_data.py
 """
 
 from __future__ import annotations
@@ -30,100 +32,27 @@ import app.models  # noqa: E402, F401
 from app.core.config import get_database_path, get_upload_path, settings  # noqa: E402
 from app.db.database import SessionLocal, init_db  # noqa: E402
 from app.models.audit_log import AuditLog  # noqa: E402
-from app.models.enums import (  # noqa: E402
-    IncidentStatus,
-    InvestigationStatus,
-    Severity,
-    UploadStatus,
-)
 from app.models.evidence import Evidence  # noqa: E402
 from app.models.incident import Incident  # noqa: E402
 from app.models.investigation import Investigation  # noqa: E402
 from app.models.log_file import LogFile  # noqa: E402
+from app.models.enums import UploadStatus  # noqa: E402
+from app.models.executive_report import ExecutiveReport  # noqa: E402
+from app.models.guardian_audit import GuardianAudit  # noqa: E402
+from app.models.mitre_finding import MitreFinding  # noqa: E402
+from app.models.response_plan import ResponsePlan  # noqa: E402
+from app.models.risk_assessment import RiskAssessment  # noqa: E402
+from app.models.threat_intelligence_finding import ThreatIntelligenceFinding  # noqa: E402
 from app.repositories.audit_log_repository import AuditLogRepository  # noqa: E402
 from app.repositories.incident_repository import IncidentRepository  # noqa: E402
 from app.repositories.log_repository import LogRepository  # noqa: E402
 from app.schemas.incident import IncidentCreate  # noqa: E402
 from app.services.incident_service import IncidentService  # noqa: E402
 from app.utils.file_validation import build_stored_filename  # noqa: E402
+from scripts.demo_agent_outputs import DEMO_AGENT_OUTPUTS, GUARDIAN_AGENTS  # noqa: E402
+from scripts.demo_catalog import DEMO_INCIDENTS, LOG_GENERATORS  # noqa: E402
 
 SEED_ACTOR = "seed_script"
-
-DEMO_INCIDENTS: tuple[dict, ...] = (
-    {
-        "title": "Suspicious PowerShell Execution",
-        "description": (
-            "PowerShell was launched by WINWORD.EXE on an employee workstation."
-        ),
-        "severity": Severity.HIGH,
-        "status": IncidentStatus.INVESTIGATING,
-        "source": "Microsoft Defender",
-        "confidence_score": 0.92,
-        "created_offset_hours": 48,
-        "investigation_status": InvestigationStatus.RUNNING,
-        "investigation_started_offset_hours": 47,
-        "evidence": (
-            {
-                "evidence_type": "Windows Event Log",
-                "filename": "security_events_1042.evtx",
-            },
-            {
-                "evidence_type": "PowerShell Transcript",
-                "filename": "powershell_transcript_1042.txt",
-            },
-        ),
-        "log_filename": "powershell_execution.log",
-    },
-    {
-        "title": "Multiple Failed Login Attempts",
-        "description": (
-            "More than 150 failed logon attempts detected from a single IP "
-            "within five minutes."
-        ),
-        "severity": Severity.MEDIUM,
-        "status": IncidentStatus.NEW,
-        "source": "Windows Security Logs",
-        "confidence_score": 0.88,
-        "created_offset_hours": 26,
-        "investigation_status": InvestigationStatus.PENDING,
-        "investigation_started_offset_hours": 25,
-        "evidence": (
-            {
-                "evidence_type": "Authentication Log",
-                "filename": "auth_failures_dc01.log",
-            },
-            {
-                "evidence_type": "Firewall Event",
-                "filename": "firewall_blocked_185.log",
-            },
-        ),
-        "log_filename": "failed_login_attempts.log",
-    },
-    {
-        "title": "Possible Ransomware Activity",
-        "description": (
-            "Rapid file encryption activity detected across multiple directories."
-        ),
-        "severity": Severity.CRITICAL,
-        "status": IncidentStatus.INVESTIGATING,
-        "source": "CrowdStrike Falcon",
-        "confidence_score": 0.98,
-        "created_offset_hours": 8,
-        "investigation_status": InvestigationStatus.RUNNING,
-        "investigation_started_offset_hours": 7,
-        "evidence": (
-            {
-                "evidence_type": "EDR Alert",
-                "filename": "falcon_ransomware_alert.json",
-            },
-            {
-                "evidence_type": "File Integrity Alert",
-                "filename": "fim_encryption_burst.csv",
-            },
-        ),
-        "log_filename": "ransomware_activity.log",
-    },
-)
 
 
 @dataclass
@@ -135,11 +64,54 @@ class SeedStats:
     evidence: int = 0
     log_files: int = 0
     audit_logs: int = 0
+    investigation_runs: int = 0
     skipped: list[str] = field(default_factory=list)
 
 
 def _now() -> datetime:
     return datetime.now(UTC)
+
+
+def clear_demo_storage() -> None:
+    """Remove uploaded log files from the configured upload directory."""
+    upload_dir = get_upload_path()
+    for path in upload_dir.iterdir():
+        if path.name == ".gitkeep":
+            continue
+        if path.is_file():
+            path.unlink()
+
+
+def reset_database_file() -> None:
+    """Delete the SQLite database file if it exists."""
+    db_path = get_database_path()
+    if db_path.exists():
+        db_path.unlink()
+
+
+def initialize_demo_runtimes() -> None:
+    """Initialize agent, MCP, and AI runtimes required for investigation runs."""
+    from app.core.adk_runtime import initialize_adk_runtime
+    from app.ai.runtime import initialize_ai_runtime
+    from app.core.evidence_runtime import initialize_evidence_runtime
+    from app.core.executive_report_runtime import initialize_executive_report_runtime
+    from app.core.guardian_runtime import initialize_guardian_runtime
+    from app.core.mcp_runtime import initialize_mcp_runtime
+    from app.core.mitre_runtime import initialize_mitre_runtime
+    from app.core.response_runtime import initialize_response_runtime
+    from app.core.risk_runtime import initialize_risk_runtime
+    from app.core.threat_intelligence_runtime import initialize_threat_intelligence_runtime
+
+    initialize_adk_runtime()
+    initialize_evidence_runtime()
+    initialize_threat_intelligence_runtime()
+    initialize_mitre_runtime()
+    initialize_risk_runtime()
+    initialize_response_runtime()
+    initialize_executive_report_runtime()
+    initialize_guardian_runtime()
+    initialize_mcp_runtime()
+    initialize_ai_runtime()
 
 
 def _find_incident_by_title(db, title: str) -> Incident | None:
@@ -186,106 +158,6 @@ def _record_audit(
         )
     )
     stats.audit_logs += 1
-
-
-def _generate_powershell_log() -> str:
-    lines = [
-        "2026-06-24T08:15:01Z HOST=WS-FIN-042 EVENT=ProcessCreate PROCESS=WINWORD.EXE PID=4892 USER=DOMAIN\\jsmith",
-        "2026-06-24T08:15:03Z HOST=WS-FIN-042 EVENT=ProcessCreate PARENT=WINWORD.EXE PROCESS=powershell.exe PID=5120",
-        "2026-06-24T08:15:03Z HOST=WS-FIN-042 EVENT=CommandLine CMD=powershell.exe -NoProfile -WindowStyle Hidden -EncodedCommand ...",
-        "2026-06-24T08:15:04Z HOST=WS-FIN-042 EVENT=NetworkConnect PROCESS=powershell.exe DEST=185.234.72.19:443",
-        "2026-06-24T08:15:05Z HOST=WS-FIN-042 EVENT=FileCreate PATH=C:\\Users\\jsmith\\AppData\\Local\\Temp\\stage.ps1",
-        "2026-06-24T08:15:06Z HOST=WS-FIN-042 EVENT=RegistrySet KEY=HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run VALUE=Updater",
-        "2026-06-24T08:15:08Z HOST=WS-FIN-042 EVENT=ScriptBlock ID=1 TEXT=IEX (New-Object Net.WebClient).DownloadString(...)",
-        "2026-06-24T08:15:10Z HOST=WS-FIN-042 EVENT=AMSI_SCAN RESULT=Suspicious SCRIPT=Invoke-Expression detected",
-        "2026-06-24T08:15:11Z HOST=WS-FIN-042 EVENT=DefenderAlert SEVERITY=High TECHNIQUE=T1059.001",
-        "2026-06-24T08:15:12Z HOST=WS-FIN-042 EVENT=ProcessTerminate PROCESS=powershell.exe PID=5120 EXIT=1",
-        "2026-06-24T08:15:14Z HOST=WS-FIN-042 EVENT=ProcessCreate PROCESS=cmd.exe PID=5201 PARENT=WINWORD.EXE",
-        "2026-06-24T08:15:16Z HOST=WS-FIN-042 EVENT=FileDelete PATH=C:\\Users\\jsmith\\AppData\\Local\\Temp\\stage.ps1",
-        "2026-06-24T08:15:18Z HOST=WS-FIN-042 EVENT=NetworkConnect PROCESS=WINWORD.EXE DEST=185.234.72.19:8080",
-        "2026-06-24T08:15:20Z HOST=WS-FIN-042 EVENT=TokenElevation PROCESS=powershell.exe RESULT=Denied",
-        "2026-06-24T08:15:22Z HOST=WS-FIN-042 EVENT=LogonType=2 USER=DOMAIN\\jsmith SOURCE=Console",
-        "2026-06-24T08:15:24Z HOST=WS-FIN-042 EVENT=ServiceCreate NAME=UpdateHelper DISPLAY=Windows Update Helper",
-        "2026-06-24T08:15:26Z HOST=WS-FIN-042 EVENT=FileCreate PATH=C:\\ProgramData\\Updater\\config.json",
-        "2026-06-24T08:15:28Z HOST=WS-FIN-042 EVENT=PowerShellModule LOAD=Microsoft.PowerShell.Utility",
-        "2026-06-24T08:15:30Z HOST=WS-FIN-042 EVENT=DefenderQuarantine FILE=C:\\Users\\jsmith\\AppData\\Local\\Temp\\stage.ps1",
-        "2026-06-24T08:15:32Z HOST=WS-FIN-042 EVENT=ProcessCreate PROCESS=MsMpEng.exe PID=1044",
-        "2026-06-24T08:15:34Z HOST=WS-FIN-042 EVENT=AuditPolicyChange CATEGORY=Process Creation",
-        "2026-06-24T08:15:36Z HOST=WS-FIN-042 EVENT=NetworkConnect PROCESS=WINWORD.EXE DEST=10.20.30.5:445",
-        "2026-06-24T08:15:38Z HOST=WS-FIN-042 EVENT=ScriptBlock ID=2 TEXT=Start-Sleep -Seconds 2; Remove-Item -Force stage.ps1",
-        "2026-06-24T08:15:40Z HOST=WS-FIN-042 EVENT=IncidentEscalation SEVERITY=High ANALYST=auto-triage",
-        "2026-06-24T08:15:42Z HOST=WS-FIN-042 EVENT=CollectionComplete ARTIFACTS=4 STATUS=Investigating",
-    ]
-    return "\n".join(lines) + "\n"
-
-
-def _generate_failed_login_log() -> str:
-    lines = [
-        "2026-06-25T02:41:01Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:02Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:03Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=svc_backup SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:04Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=jsmith SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:05Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:06Z EVENT=4771 RESULT=Failure SERVICE=krbtgt USER=administrator SOURCE=203.0.113.44",
-        "2026-06-25T02:41:07Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=guest SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:08Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:09Z EVENT=5140 RESULT=Denied USER=anonymous SOURCE=203.0.113.44 SHARE=\\\\DC01\\SYSVOL",
-        "2026-06-25T02:41:10Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=helpdesk SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:11Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:12Z EVENT=4740 RESULT=Lockout USER=administrator SOURCE=203.0.113.44",
-        "2026-06-25T02:41:13Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:14Z EVENT=5152 RESULT=Drop PROTO=TCP SOURCE=203.0.113.44:55221 DEST=10.10.0.10:3389",
-        "2026-06-25T02:41:15Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:16Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:17Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:18Z EVENT=5157 RESULT=Block PROTO=TCP SOURCE=203.0.113.44 DEST=10.10.0.10:445 RULE=Block-External-SMB",
-        "2026-06-25T02:41:19Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:20Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:21Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:22Z EVENT=4723 RESULT=Failure USER=administrator SOURCE=203.0.113.44 REASON=Bad password",
-        "2026-06-25T02:41:23Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:24Z EVENT=4625 RESULT=Failure LOGON_TYPE=3 USER=administrator SOURCE=203.0.113.44 WORKSTATION=KALI-01",
-        "2026-06-25T02:41:25Z EVENT=Alert THRESHOLD=150/5min SOURCE=203.0.113.44 ACTION=Account lockout triggered",
-    ]
-    return "\n".join(lines) + "\n"
-
-
-def _generate_ransomware_log() -> str:
-    lines = [
-        "2026-06-26T05:12:01Z HOST=FS-PROD-01 EVENT=EDRAlert SEVERITY=Critical DETECTION=Ransomware.Behavior.A",
-        "2026-06-26T05:12:03Z HOST=FS-PROD-01 EVENT=FileModify PATH=\\\\FS-PROD-01\\Finance\\Q2\\report.xlsx EXT=.locked",
-        "2026-06-26T05:12:04Z HOST=FS-PROD-01 EVENT=FileModify PATH=\\\\FS-PROD-01\\Finance\\Q2\\ledger.csv EXT=.locked",
-        "2026-06-26T05:12:05Z HOST=WS-HR-017 EVENT=ProcessCreate PROCESS=encrypt.exe PID=8844 PARENT=explorer.exe",
-        "2026-06-26T05:12:06Z HOST=WS-HR-017 EVENT=FileModify PATH=C:\\Users\\hradmin\\Documents\\policy.docx EXT=.locked",
-        "2026-06-26T05:12:07Z HOST=FS-PROD-01 EVENT=FileModify PATH=\\\\FS-PROD-01\\Shared\\Projects\\alpha.pptx EXT=.locked",
-        "2026-06-26T05:12:08Z HOST=WS-HR-017 EVENT=NetworkConnect PROCESS=encrypt.exe DEST=198.51.100.77:443",
-        "2026-06-26T05:12:09Z HOST=FS-PROD-01 EVENT=FileCreate PATH=\\\\FS-PROD-01\\Finance\\Q2\\README_RESTORE.txt",
-        "2026-06-26T05:12:10Z HOST=WS-HR-017 EVENT=FileModify PATH=C:\\Users\\hradmin\\Desktop\\contacts.xlsx EXT=.locked",
-        "2026-06-26T05:12:11Z HOST=FS-PROD-01 EVENT=FIM ALERT CHANGE=MassRename COUNT=42 DIRECTORY=\\\\FS-PROD-01\\Finance",
-        "2026-06-26T05:12:12Z HOST=WS-HR-017 EVENT=RegistrySet KEY=HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run VALUE=CryptSvc",
-        "2026-06-26T05:12:13Z HOST=FS-PROD-01 EVENT=FileModify PATH=\\\\FS-PROD-01\\Legal\\contracts.zip EXT=.locked",
-        "2026-06-26T05:12:14Z HOST=WS-HR-017 EVENT=DefenderAlert SEVERITY=Critical BEHAVIOR=CredentialAccess",
-        "2026-06-26T05:12:15Z HOST=FS-PROD-01 EVENT=VolumeShadowCopy DELETE RESULT=Success HOST=FS-PROD-01",
-        "2026-06-26T05:12:16Z HOST=WS-HR-017 EVENT=FileModify PATH=C:\\Users\\hradmin\\Pictures\\archive.zip EXT=.locked",
-        "2026-06-26T05:12:17Z HOST=FS-PROD-01 EVENT=FileModify PATH=\\\\FS-PROD-01\\Engineering\\build.ps1 EXT=.locked",
-        "2026-06-26T05:12:18Z HOST=WS-HR-017 EVENT=ProcessCreate PROCESS=vssadmin.exe PID=9011 CMD=delete shadows /all /quiet",
-        "2026-06-26T05:12:19Z HOST=FS-PROD-01 EVENT=EDRAlert SEVERITY=Critical DETECTION=ShadowCopyDeletion",
-        "2026-06-26T05:12:20Z HOST=WS-HR-017 EVENT=FileCreate PATH=C:\\Users\\Public\\DECRYPT_INSTRUCTIONS.txt",
-        "2026-06-26T05:12:21Z HOST=FS-PROD-01 EVENT=FileModify PATH=\\\\FS-PROD-01\\Finance\\Q2\\budget.pdf EXT=.locked",
-        "2026-06-26T05:12:22Z HOST=WS-HR-017 EVENT=NetworkConnect PROCESS=encrypt.exe DEST=198.51.100.77:8080",
-        "2026-06-26T05:12:23Z HOST=FS-PROD-01 EVENT=FIM ALERT CHANGE=MassEncrypt COUNT=128 DIRECTORY=\\\\FS-PROD-01\\Shared",
-        "2026-06-26T05:12:24Z HOST=WS-HR-017 EVENT=ProcessTerminate PROCESS=encrypt.exe PID=8844",
-        "2026-06-26T05:12:25Z HOST=FS-PROD-01 EVENT=IncidentEscalation SEVERITY=Critical ACTION=Isolate host FS-PROD-01",
-        "2026-06-26T05:12:26Z HOST=WS-HR-017 EVENT=HostContainment STATUS=Initiated ANALYST=auto-response",
-    ]
-    return "\n".join(lines) + "\n"
-
-
-LOG_GENERATORS = {
-    "powershell_execution.log": _generate_powershell_log,
-    "failed_login_attempts.log": _generate_failed_login_log,
-    "ransomware_activity.log": _generate_ransomware_log,
-}
 
 
 def _evidence_raw_sample(evidence_type: str, incident_title: str) -> str:
@@ -460,29 +332,32 @@ def _ensure_log_file(
     log_repo: LogRepository,
     audit_repo: AuditLogRepository,
     incident: Incident,
-    spec: dict,
+    original_filename: str,
     upload_dir: Path,
+    offset_minutes: int,
     stats: SeedStats,
 ) -> None:
-    original_filename = spec["log_filename"]
     stmt = select(LogFile).where(
         LogFile.original_filename == original_filename,
+        LogFile.incident_id == incident.id,
         LogFile.deleted_at.is_(None),
     )
-    existing = db.scalar(stmt)
-    if existing is not None:
+    if db.scalar(stmt) is not None:
         stats.skipped.append(f"log:{original_filename}")
         return
 
-    generator = LOG_GENERATORS[original_filename]
+    generator = LOG_GENERATORS.get(original_filename)
+    if generator is None:
+        raise KeyError(f"No log generator for {original_filename}")
+
     content = generator().encode("utf-8")
     file_id = uuid.uuid4()
-    extension = ".log"
+    extension = Path(original_filename).suffix or ".log"
     stored_filename = build_stored_filename(str(file_id), extension)
     destination = upload_dir / stored_filename
     destination.write_bytes(content)
 
-    uploaded_at = incident.created_at + timedelta(minutes=35)
+    uploaded_at = incident.created_at + timedelta(minutes=offset_minutes)
     checksum = hashlib.sha256(content).hexdigest()
     relative_storage_path = str(Path(settings.upload_dir) / stored_filename)
 
@@ -525,7 +400,161 @@ def _ensure_log_file(
     stats.log_files += 1
 
 
-def seed_demo_data() -> SeedStats:
+def _count_for_incident(db, model, incident_id: uuid.UUID) -> int:
+    stmt = select(func.count()).select_from(model).where(model.incident_id == incident_id)
+    return int(db.scalar(stmt) or 0)
+
+
+def seed_agent_outputs(
+    db,
+    incident: Incident,
+    stats: SeedStats,
+) -> None:
+    """Insert curated agent outputs so every incident detail tab has data."""
+    outputs = DEMO_AGENT_OUTPUTS.get(incident.title)
+    if outputs is None:
+        return
+
+    created_at = incident.created_at + timedelta(hours=1)
+
+    if _count_for_incident(db, ThreatIntelligenceFinding, incident.id) == 0:
+        for item in outputs.get("threat_intel", []):
+            db.add(
+                ThreatIntelligenceFinding(
+                    incident_id=incident.id,
+                    indicator=item["indicator"],
+                    indicator_type=item["indicator_type"],
+                    reputation=item["reputation"],
+                    confidence=item["confidence"],
+                    source=item["source"],
+                    description=item["description"],
+                    analyst_notes=item["analyst_notes"],
+                    created_at=created_at,
+                )
+            )
+        stats.audit_logs += 0
+
+    if _count_for_incident(db, MitreFinding, incident.id) == 0:
+        for item in outputs.get("mitre", []):
+            db.add(
+                MitreFinding(
+                    incident_id=incident.id,
+                    technique_id=item["technique_id"],
+                    technique_name=item["technique_name"],
+                    tactic=item["tactic"],
+                    confidence=item["confidence"],
+                    evidence=item["evidence"],
+                    created_at=created_at,
+                )
+            )
+
+    if _count_for_incident(db, RiskAssessment, incident.id) == 0 and "risk" in outputs:
+        risk = outputs["risk"]
+        db.add(
+            RiskAssessment(
+                incident_id=incident.id,
+                source="FALLBACK",
+                overall_risk=risk["overall_risk"],
+                risk_score=risk["risk_score"],
+                likelihood=risk["likelihood"],
+                business_impact=risk["business_impact"],
+                confidence=risk["confidence"],
+                priority=risk["priority"],
+                summary=risk["summary"],
+                reasoning=risk["reasoning"],
+                created_at=created_at,
+            )
+        )
+
+    if _count_for_incident(db, ResponsePlan, incident.id) == 0 and "response" in outputs:
+        resp = outputs["response"]
+        db.add(
+            ResponsePlan(
+                incident_id=incident.id,
+                source="FALLBACK",
+                priority=resp["priority"],
+                containment=resp["containment"],
+                eradication=resp["eradication"],
+                recovery=resp["recovery"],
+                monitoring=resp["monitoring"],
+                executive_summary=resp["executive_summary"],
+                created_at=created_at,
+            )
+        )
+
+    if _count_for_incident(db, ExecutiveReport, incident.id) == 0 and "executive_report" in outputs:
+        report = outputs["executive_report"]
+        db.add(
+            ExecutiveReport(
+                incident_id=incident.id,
+                source="FALLBACK",
+                title=report["title"],
+                executive_summary=report["executive_summary"],
+                business_impact=report["business_impact"],
+                markdown_report=report["markdown_report"],
+                created_at=created_at,
+            )
+        )
+
+    if _count_for_incident(db, GuardianAudit, incident.id) == 0:
+        for agent_name in GUARDIAN_AGENTS:
+            db.add(
+                GuardianAudit(
+                    incident_id=incident.id,
+                    agent_name=agent_name,
+                    validation_status="approved",
+                    issues_found=[],
+                    action_taken="approved",
+                    created_at=created_at + timedelta(minutes=5),
+                )
+            )
+
+    db.flush()
+
+
+def seed_timelines(db, incident: Incident) -> None:
+    """Build timeline events from evidence and logs when none exist."""
+    from app.models.timeline_event import TimelineEvent
+    from app.services.timeline_service import TimelineService
+
+    existing = _count_for_incident(db, TimelineEvent, incident.id)
+    if existing > 0:
+        return
+
+    TimelineService(db).get_timeline(incident.id)
+
+
+def run_demo_investigations(db, stats: SeedStats) -> None:
+    """Run the full investigation workflow for flagged demo incidents."""
+    from app.services.investigation_workflow_service import InvestigationWorkflowService
+
+    workflow = InvestigationWorkflowService(db)
+    incident_repo = IncidentRepository(db)
+
+    for spec in DEMO_INCIDENTS:
+        if not spec.get("run_investigation"):
+            continue
+
+        incident = _find_incident_by_title(db, spec["title"])
+        if incident is None:
+            continue
+
+        try:
+            result = workflow.run(incident.id)
+            stats.investigation_runs += 1
+            incident = incident_repo.get_by_id(incident.id)
+            if incident and incident.investigation:
+                incident.investigation.investigation_status = spec["investigation_status"]
+            print(
+                f"  Investigation run completed: {spec['title']} "
+                f"(status={result.status}, score={result.evaluation_score})"
+            )
+        except Exception as exc:
+            print(f"  Investigation run failed: {spec['title']}: {exc}")
+            raise
+
+
+def seed_demo_data(run_investigations: bool = False) -> SeedStats:
     """Populate the database with demo records and return creation counts."""
     init_db()
     upload_dir = get_upload_path()
@@ -549,9 +578,35 @@ def seed_demo_data() -> SeedStats:
             )
             _ensure_investigation(db, incident_repo, audit_repo, incident, spec, stats)
             _ensure_evidence(db, audit_repo, incident, spec, stats)
-            _ensure_log_file(db, log_repo, audit_repo, incident, spec, upload_dir, stats)
+
+            offset = 35
+            for log_filename in spec["log_filenames"]:
+                _ensure_log_file(
+                    db,
+                    log_repo,
+                    audit_repo,
+                    incident,
+                    log_filename,
+                    upload_dir,
+                    offset,
+                    stats,
+                )
+                offset += 5
 
         db.commit()
+
+        if run_investigations:
+            initialize_demo_runtimes()
+            run_demo_investigations(db, stats)
+
+        for spec in DEMO_INCIDENTS:
+            incident = _find_incident_by_title(db, spec["title"])
+            if incident is not None:
+                seed_agent_outputs(db, incident, stats)
+                seed_timelines(db, incident)
+
+        db.commit()
+
         return stats
     except Exception:
         db.rollback()
@@ -560,8 +615,15 @@ def seed_demo_data() -> SeedStats:
         db.close()
 
 
+def reset_and_seed_demo(run_investigations: bool = True) -> SeedStats:
+    """Wipe storage and database, then seed a fresh deterministic demo state."""
+    clear_demo_storage()
+    reset_database_file()
+    return seed_demo_data(run_investigations=run_investigations)
+
+
 def main() -> None:
-    stats = seed_demo_data()
+    stats = seed_demo_data(run_investigations=False)
     print("Oz AI demo data seed complete.")
     print(f"  Database path:          {get_database_path()}")
     print(f"  Incidents created:      {stats.incidents}")

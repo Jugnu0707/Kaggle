@@ -17,7 +17,16 @@ export interface HealthData {
   adk?: boolean;
   coordinator?: boolean;
   mcp?: boolean;
+  runtime?: boolean;
+  registered_agents?: number;
+  registered_tools?: number;
   timestamp: string;
+}
+
+export interface MCPStatusData {
+  mcp: boolean;
+  tool_count: number;
+  tools: string[];
 }
 
 export interface DashboardStats {
@@ -188,4 +197,37 @@ export interface ThreatIntelligenceFindingRecord {
 export interface ThreatIntelligenceFindingList {
   items: ThreatIntelligenceFindingRecord[];
   total: number;
+}
+
+export interface AgentEvaluationSummary {
+  agent_name: string;
+  health_score: number;
+  availability: number;
+  reliability: number;
+  performance: number;
+  accuracy: number;
+  total_executions: number;
+  success_count: number;
+  failure_count: number;
+  success_rate: number;
+  mean_execution_time_ms: number;
+  ai_used_count: number;
+  fallback_used_count: number;
+  mean_confidence: number | null;
+  mean_retry_count: number;
+  mean_output_size: number;
+}
+
+export interface EvaluationOverview {
+  overall_score: number;
+  agents: AgentEvaluationSummary[];
+  total_executions: number;
+  overall_success_rate: number;
+  generated_at: string | null;
+  tool_execution_count: number;
+  tool_failure_count: number;
+  mean_adk_session_duration_ms: number;
+  mean_investigation_duration_ms: number;
+  mean_agent_execution_time_ms: number;
+  mean_mcp_latency_ms: number;
 }

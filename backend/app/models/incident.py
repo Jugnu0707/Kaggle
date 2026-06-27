@@ -15,6 +15,7 @@ from app.models.enums import IncidentStatus, Severity
 if TYPE_CHECKING:
     from app.models.evidence import Evidence
     from app.models.investigation import Investigation
+    from app.models.investigation_run import InvestigationRun
     from app.models.log_file import LogFile
     from app.models.mitre_finding import MitreFinding
     from app.models.risk_assessment import RiskAssessment
@@ -72,6 +73,10 @@ class Incident(Base):
     investigation: Mapped[Investigation | None] = relationship(
         back_populates="incident",
         uselist=False,
+        cascade="all, delete-orphan",
+    )
+    investigation_runs: Mapped[list[InvestigationRun]] = relationship(
+        back_populates="incident",
         cascade="all, delete-orphan",
     )
     log_files: Mapped[list[LogFile]] = relationship(

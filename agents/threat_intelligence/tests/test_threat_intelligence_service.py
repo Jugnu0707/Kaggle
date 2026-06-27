@@ -9,6 +9,7 @@ from google.genai import errors as genai_errors
 from sqlalchemy.orm import Session
 
 from agents.evidence.models import EvidencePackage, FileMetadata, TimestampRange
+from agents.conftest import build_mock_ai_runtime
 from agents.threat_intelligence.models import ThreatIntelligenceInput
 from agents.threat_intelligence.schemas import (
     AIEnrichedFinding,
@@ -17,6 +18,7 @@ from agents.threat_intelligence.schemas import (
 )
 from agents.threat_intelligence.service import ThreatIntelligenceService
 from app.core.exceptions import NotFoundException
+from mcp.registry import ToolResult
 
 
 def _build_package(
@@ -79,10 +81,13 @@ def test_enrich_from_empty_package(db_session: Session) -> None:
 
 
 def test_enrich_invalid_incident_returns_not_found(db_session: Session) -> None:
-    with pytest.raises(NotFoundException):
-        ThreatIntelligenceService(db_session).enrich(
-            ThreatIntelligenceInput(incident_id=uuid.uuid4())
-        )
+    mock_runtime = build_mock_ai_runtime()
+    mock_runtime.invoke_tool.return_value = ToolResult(success=False, error="Incident not found")
+    with patch("agents.threat_intelligence.service.get_ai_runtime", return_value=mock_runtime):
+        with pytest.raises(NotFoundException):
+            ThreatIntelligenceService(db_session).enrich(
+                ThreatIntelligenceInput(incident_id=uuid.uuid4())
+            )
 
 
 def test_ai_success_returns_ai_source(db_session: Session) -> None:
@@ -92,6 +97,7 @@ def test_ai_success_returns_ai_source(db_session: Session) -> None:
         ]
     )
     service = ThreatIntelligenceService(db_session)
+    mock_runtime = build_mock_ai_runtime()
     ai_response = AIThreatIntelligenceResponse(
         findings=[
             AIEnrichedFinding(
@@ -110,8 +116,9 @@ def test_ai_success_returns_ai_source(db_session: Session) -> None:
             ),
         ]
     )
-    with patch.object(service, "_call_gemini", return_value=ai_response):
-        result = service.enrich_from_package(package)
+    with patch("agents.threat_intelligence.service.get_ai_runtime", return_value=mock_runtime):
+        with patch.object(service, "_call_gemini", return_value=ai_response):
+            result = service.enrich_from_package(package)
 
     assert result.findings[0].source == ThreatIntelligenceSource.AI
     assert result.findings[0].description.startswith("External IPv4")

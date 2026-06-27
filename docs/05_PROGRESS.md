@@ -44,6 +44,67 @@
 
 ---
 
+---
+
+---
+
+---
+
+## 2026-06-27 — Sprint 3.5 Task 4 (Demo & submission prep)
+
+**Milestone Focus:** Demo mode, sample data, screenshots, judge experience
+
+### Completed
+
+- Added `scripts/reset_demo.py` — one-click database wipe, seed, and investigation runs.
+- Expanded demo data: **10 incidents**, **25 logs**, all required attack types.
+- Curated agent outputs (TI, MITRE, risk, response, reports, guardian, timeline) for every incident.
+- Generated `docs/architecture.png` and **11 UI screenshots** in `docs/screenshots/`.
+- Updated README with demo workflow, screenshots, and competition-ready structure.
+- Fixed Guardian confidence validation for FALLBACK-sourced findings.
+
+---
+
+## 2026-06-27 — Sprint 3.5 Task 3 (Competition hardening)
+
+**Milestone Focus:** Stability, Docker, demo workflow, competition readiness
+
+### Completed
+
+- Stabilized full test suite: **153 tests**, **100% passing**.
+- Added pytest-cov; measured **93%** line coverage (`app`, `agents`, `mcp`, `evaluation`).
+- Fixed agent unit test mocks (removed leaking autouse fixture).
+- Docker backend image copies `evaluation/`; compose includes Guardian and Gemini env vars.
+- Evaluation dashboard shows investigation duration, agent execution time, MCP latency.
+- Reports and Settings pages load live API data.
+- Investigation workflow integration tests pass (5/5).
+
+---
+
+## 2026-06-27 — Sprint 3.5 Task 1 (Documentation sync)
+
+**Session Duration:** Documentation sprint
+**Milestone Focus:** Sprint 3.5 — Align docs with implementation
+
+### Completed
+
+- **Sprint 3 Task 5 — Evaluation framework.** `evaluation/` package with benchmarks, health scoring, API endpoints (`GET /api/v1/evaluation`), `EvaluationPage`, `evaluation_metrics` table, and tests.
+- **Sprint 3 Task 6 — Investigation workflow.** `InvestigationWorkflowService`, `POST /api/v1/investigations/run`, `InvestigationRunnerPage`, `investigation_runs` table, Guardian-between-stages orchestration.
+- **Sprint 3.5 Task 1 — Documentation sync.** Updated README, `01_PROJECT_BRIEF`, `02_ARCHITECTURE`, `03_TASKS`, `04_DECISIONS` (ADR-004), `05_PROGRESS`, `07_SUBMISSION_CHECKLIST`, `08_UI_UX_SPECIFICATION`, and created `08_MILESTONES.md`.
+
+### Implementation facts (documented)
+
+- 35 API endpoints, 15 database tables, 8 agents, 5 MCP tools, 9 frontend routes
+- Agents use services + `google.genai`; MCP tools not invoked at runtime
+- No API authentication; approval workflow not implemented
+- 99 tests in `tests/` + `evaluation/tests/` (95 pass without `GOOGLE_API_KEY`)
+
+### Next Steps
+
+- Sprint 4: API auth, approval workflow, datasets, Docker hardening, submission prep
+
+---
+
 ## YYYY-MM-DD — Day 1
 
 **Session Duration:** 4 hours

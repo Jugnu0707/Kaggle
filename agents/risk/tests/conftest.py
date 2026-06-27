@@ -1,12 +1,22 @@
 """Pytest fixtures for Risk Assessment Agent unit tests."""
 
+from unittest.mock import patch
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 import app.models  # noqa: F401
+from agents.conftest import build_mock_ai_runtime
 from app.db.database import Base
+
+
+@pytest.fixture
+def mock_ai_runtime():
+    mock_runtime = build_mock_ai_runtime()
+    with patch("agents.risk.service.get_ai_runtime", return_value=mock_runtime):
+        yield mock_runtime
 
 
 @pytest.fixture

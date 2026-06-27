@@ -37,7 +37,21 @@ def validate_confidence(
     if "source" in response and str(response["source"]).upper() != "AI":
         return []
 
-    confidence_values = extract_confidence_values(response)
+    confidence_values: list[int] = []
+    findings = response.get("findings")
+    if isinstance(findings, list):
+        for finding in findings:
+            if not isinstance(finding, dict):
+                continue
+            finding_source = str(finding.get("source", "")).upper()
+            if finding_source and finding_source != "AI":
+                continue
+            confidence = finding.get("confidence")
+            if isinstance(confidence, (int, float)):
+                confidence_values.append(int(confidence))
+    else:
+        confidence_values = extract_confidence_values(response)
+
     if not confidence_values and "confidence" in response:
         try:
             confidence_values = [int(response["confidence"])]

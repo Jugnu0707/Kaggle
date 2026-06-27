@@ -20,6 +20,7 @@ dev = [
     "isort==5.13.2",
     "pytest==8.3.4",
     "pytest-asyncio==0.24.0",
+    "pytest-cov==6.0.0",
     "ruff==0.8.4",
 ]
 
@@ -28,16 +29,17 @@ requires = ["setuptools>=75.0.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["app", "agents", "agents.coordinator", "agents.evidence", "agents.mitre", "agents.response", "agents.risk", "agents.threat_intelligence", "mcp", "mcp.tools"]
+packages = ["app", "agents", "agents.coordinator", "agents.evidence", "agents.mitre", "agents.response", "agents.risk", "agents.threat_intelligence", "evaluation", "mcp", "mcp.tools"]
 
 [tool.setuptools.package-dir]
 "agents" = "../agents"
+"evaluation" = "../evaluation"
 "mcp" = "../mcp"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["../tests", "../agents/coordinator/tests", "../agents/evidence/tests", "../agents/mitre/tests", "../agents/response/tests", "../agents/risk/tests", "../agents/threat_intelligence/tests"]
+testpaths = ["../tests", "../evaluation/tests", "../agents/coordinator/tests", "../agents/evidence/tests", "../agents/mitre/tests", "../agents/response/tests", "../agents/risk/tests", "../agents/threat_intelligence/tests"]
 
 [tool.black]
 line-length = 100
@@ -51,6 +53,14 @@ known_first_party = ["agents", "app", "mcp", "tests"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.coverage.run]
+source = ["app", "agents", "mcp", "evaluation"]
+omit = ["*/tests/*", "*/__pycache__/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]

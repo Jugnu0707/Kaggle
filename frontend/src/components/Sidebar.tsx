@@ -5,6 +5,7 @@ const navItems = [
   { to: "/incidents", label: "Incidents" },
   { to: "/logs", label: "Log Uploads" },
   { to: "/reports", label: "Reports" },
+  { to: "/evaluation", label: "Evaluation" },
   { to: "/settings", label: "Settings" },
 ];
 
