@@ -2,7 +2,17 @@
 
 Visual assets and **official Kaggle demonstration video** preparation materials for Oz AI.
 
-## Video preparation (Sprint 4 Task 3)
+## Final video preparation (RC2 Task 5)
+
+| Document | Purpose |
+|----------|---------|
+| [FINAL_DEMO_SCRIPT.md](FINAL_DEMO_SCRIPT.md) | Timed script — target 4 min, max 5 min |
+| [FINAL_STORYBOARD.md](FINAL_STORYBOARD.md) | Scene-by-scene screen and duration |
+| [FINAL_RECORDING_GUIDE.md](FINAL_RECORDING_GUIDE.md) | Resolution, browser, audio, terminal setup |
+| [JUDGE_FAQ.md](JUDGE_FAQ.md) | Judge Q&A — ADK, MCP, fallback, SIEM |
+| [CHECKLIST.md](CHECKLIST.md) | Submission and demo verification |
+
+## Video preparation (earlier drafts)
 
 | Document | Purpose |
 |----------|---------|

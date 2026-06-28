@@ -1,202 +1,258 @@
 # Oz AI
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+**Multi-agent incident response for security teams.**
+
+Oz AI is an open-source platform that coordinates specialist AI agents to investigate security incidents, validate outputs, and produce executive-ready reports.
+
+---
+
 [![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.138-009688.svg)](https://fastapi.tiangolo.com/)
 [![React](https://img.shields.io/badge/React-19-61DAFB.svg)](https://react.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg)](https://docs.docker.com/compose/)
 [![Google ADK](https://img.shields.io/badge/Google-ADK-4285F4.svg)](https://google.github.io/adk-docs/)
-[![Tests](https://img.shields.io/badge/tests-176-passing-brightgreen.svg)](tests/)
-[![Kaggle Capstone](https://img.shields.io/badge/Kaggle-AI%20Agents%20Capstone-20BEFF.svg)](https://www.kaggle.com/competitions)
-
-**Enterprise Incident Response Platform** · v0.1.0 · **Submission Ready**
-
-Submission package: [`docs/submission/`](docs/submission/) · Final report: [`docs/FINAL_READINESS_REPORT.md`](docs/FINAL_READINESS_REPORT.md)
-
-Oz AI is an open-source, multi-agent platform for enterprise security incident response. It combines a FastAPI backend, React dashboard, eight Google ADK specialist agents, Guardian safety validation, MCP operational tools, and an end-to-end investigation workflow — built for the **Kaggle AI Agents Intensive Capstone** (Agents for Business track).
+[![MCP](https://img.shields.io/badge/MCP-5%20tools-6366F1.svg)](#mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 ---
 
-## Judge quickstart (6 steps)
-
-```bash
-git clone https://github.com/Jugnu0707/Kaggle.git
-cd Kaggle
-cp .env.example .env
-docker compose up --build
-python scripts/reset_demo.py   # seed 10 incidents, 25 logs, run investigations
-```
-
-| Step | Action | URL |
-|------|--------|-----|
-| 1 | Clone repository | `git clone` above |
-| 2 | Configure environment | `cp .env.example .env` |
-| 3 | Start Docker stack | `docker compose up --build` |
-| 4 | Open dashboard | http://localhost:5173 |
-| 5 | Run investigation | Incidents → **Suspicious PowerShell Execution** → **Investigate** |
-| 6 | Review outputs | All incident tabs + `/evaluation` + Settings (ADK/MCP) |
-
-Optional: `curl http://localhost:8000/api/v1/ai/test` to verify Gemini (requires `GOOGLE_API_KEY`).
-
-Full checklist: [`docs/kaggle/final_checklist.md`](docs/kaggle/final_checklist.md)
+![Oz AI Dashboard](docs/screenshots/dashboard.png)
 
 ---
 
-## Repository statistics
+## Table of Contents
 
-| Metric | Count |
-|--------|-------|
-| API paths | **35** |
-| API operations | **39** |
-| AI agents | **8** |
-| MCP tools | **5** |
-| Database tables | **16** |
-| Frontend pages | **10** |
-| Automated tests | **176** |
-| Documentation files | **47** |
-| Lines of code (approx.) | **29,333** |
-
-Regenerate: `python scripts/generate_repo_stats.py`
-
----
-
-## Overview
-
-Oz AI helps security teams investigate incidents faster by running a coordinated multi-agent pipeline:
-
-1. Collect and normalize evidence from uploaded logs
-2. Extract IOCs and enrich with threat intelligence
-3. Map findings to MITRE ATT&CK techniques
-4. Assess enterprise risk
-5. Draft a structured response plan
-6. Generate executive-ready reports
-7. Validate every stage through the Guardian Agent
-8. Reconstruct timelines and score agent performance
-
-Investigations are triggered explicitly via `POST /api/v1/investigations/run`. Creating an incident does **not** automatically start the agent pipeline.
-
-Oz AI is a **decision-support system**. Human approval gates for response actions are architecturally documented; API enforcement is planned for Sprint 4.
+- [Problem Statement](#problem-statement)
+- [Solution](#solution)
+- [Key Features](#key-features)
+- [Architecture](#architecture)
+- [Investigation Workflow](#investigation-workflow)
+- [Technology Stack](#technology-stack)
+- [Repository Structure](#repository-structure)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Demo](#demo)
+- [Screenshots](#screenshots)
+- [AI Architecture](#ai-architecture)
+- [MCP](#mcp)
+- [Google ADK](#google-adk)
+- [Security](#security)
+- [Evaluation](#evaluation)
+- [Roadmap](#roadmap)
+- [Known Limitations](#known-limitations)
+- [Contributing](#contributing)
+- [License](#license)
+- [Acknowledgements](#acknowledgements)
 
 ---
 
-## Problem statement
+## Problem Statement
 
-Enterprise security teams face:
+Enterprise incident response is difficult for four recurring reasons:
 
-- **Slow triage** — Manual log review delays containment
-- **Fragmented tooling** — SIEM, threat intel, and ticketing rarely share context
-- **Inconsistent analysis** — Analyst skill varies across shifts and teams
-- **Poor executive communication** — Technical findings rarely translate to business risk language
+1. **Slow triage** — Analysts spend hours parsing raw logs before they can assess scope or severity.
+2. **Fragmented tooling** — SIEM alerts, threat intelligence feeds, ticketing systems, and executive reporting rarely share a single investigation context.
+3. **Inconsistent analysis** — Output quality varies by analyst experience, shift, and available time.
+4. **Poor executive communication** — Technical findings are rarely translated into business risk language that leadership can act on.
 
-Mean time to respond (MTTR) remains high despite billions invested in security tooling.
+These gaps increase mean time to respond (MTTR) even when organizations have invested heavily in security tooling.
 
 ---
 
 ## Solution
 
-Oz AI deploys a **Coordinator-led fleet of specialist agents** that structure the entire investigation lifecycle:
+Oz AI coordinates a fleet of specialist agents through a single investigation pipeline. Analysts upload log evidence, trigger an investigation, and receive structured outputs at each stage — IOC enrichment, MITRE ATT&CK mapping, risk assessment, response planning, and executive reporting.
 
-| Stage | Agent | Output |
-|-------|-------|--------|
-| Plan | Coordinator | Execution plan |
-| Collect | Evidence | Normalized log evidence |
-| Enrich | Threat Intelligence | IOCs and reputation |
-| Map | MITRE Mapping | ATT&CK techniques |
-| Assess | Risk Assessment | Risk score and narrative |
-| Respond | Response Planning | Containment and recovery plan |
-| Report | Executive Report | CISO-ready summary |
-| Validate | Guardian | Safety audit at every stage |
+Every specialist output passes through the **Guardian Agent** before the pipeline continues. After the agent chain completes, the **Timeline Engine** reconstructs chronological events and the **Evaluation Engine** scores agent performance.
 
-After the pipeline completes, the **Timeline Engine** reconstructs events and the **Evaluation Engine** scores agent outputs.
+Oz AI is a **decision-support system**. It produces recommendations; it does not execute remediation actions. Investigations are triggered explicitly via `POST /api/v1/investigations/run`.
+
+---
+
+## Key Features
+
+### AI
+
+- Eight Google ADK specialist agents orchestrated by a Coordinator
+- AI-first execution with deterministic fallbacks when Gemini is unavailable
+- Investigation replay with per-step `ai_used` and `fallback_used` flags
+- Connectivity probe at `GET /api/v1/ai/test`
+
+### Security
+
+- Guardian validation after every specialist agent stage
+- Prompt injection detection, PII masking, and secret scanning
+- Schema compliance and mandatory field checks
+- Configurable confidence thresholds (`MIN_AI_CONFIDENCE`)
+
+### Investigation
+
+- End-to-end workflow from log upload to executive report
+- Support for `.log`, `.txt`, `.json`, `.csv`, and `.evtx` (metadata) files
+- Offline reputation engine for IOC enrichment without external APIs
+- Local MITRE ATT&CK rule matching
+
+### Visualization
+
+- React dashboard with ten pages covering the full analyst workflow
+- Incident detail tabs for evidence, threat intel, MITRE, risk, response, and reports
+- Timeline reconstruction from agent outputs
+- Investigation runner and step-by-step replay views
+
+### Reporting
+
+- Executive reports in structured JSON and Markdown
+- Risk narratives with severity scoring
+- Response plans with containment, eradication, recovery, and monitoring steps
+- Evaluation dashboard with per-agent health scores
 
 ---
 
 ## Architecture
 
-![Oz AI Architecture](docs/architecture/architecture.png)
-
-Detailed diagrams: [`docs/architecture/`](docs/architecture/)
-
 ```mermaid
 flowchart TB
-    UI["React Dashboard"] --> API["FastAPI · 39 operations"]
-    API --> WF["Investigation Workflow"]
-    WF --> AGENTS["8 Specialist Agents"]
-    AGENTS --> GR["Guardian"]
-    AGENTS --> GEMINI["Google Gemini"]
-    API --> MCP["MCP · 5 tools"]
-    API --> DB["SQLite · 16 tables"]
+    subgraph Client
+        UI["React Dashboard<br/>10 pages"]
+    end
+
+    subgraph Backend["FastAPI Backend"]
+        API["REST API<br/>35 paths · 39 operations"]
+        WF["Investigation Workflow"]
+        TL["Timeline Engine"]
+        EV["Evaluation Engine"]
+    end
+
+    subgraph Agents["8 Specialist Agents"]
+        CO["Coordinator"]
+        EVA["Evidence"]
+        TI["Threat Intelligence"]
+        MI["MITRE Mapping"]
+        RI["Risk Assessment"]
+        RP["Response Planning"]
+        ER["Executive Report"]
+        GR["Guardian"]
+    end
+
+    subgraph Runtime
+        ADK["Google ADK Runtime"]
+        GEMINI["Google Gemini"]
+        MCP["MCP Registry<br/>5 tools"]
+    end
+
+    subgraph Data
+        DB["SQLite<br/>16 tables"]
+        FS["Log Upload Storage"]
+    end
+
+    UI --> API
+    API --> WF
+    WF --> CO --> EVA --> GR
+    GR --> TI --> GR --> MI --> GR
+    GR --> RI --> GR --> RP --> GR
+    GR --> ER --> GR
+    GR --> TL --> EV
+    Agents --> ADK
+    TI & RI & RP & ER --> GEMINI
+    API --> MCP
+    API --> DB
+    API --> FS
 ```
 
-Layer reference: [`docs/02_ARCHITECTURE.md`](docs/02_ARCHITECTURE.md)
+Layer reference: [`docs/02_ARCHITECTURE.md`](docs/02_ARCHITECTURE.md) · Static diagram: [`docs/architecture/architecture.png`](docs/architecture/architecture.png)
 
 ---
 
-## AI workflow
+## Investigation Workflow
 
 ```text
-Coordinator → Evidence → Guardian → Threat Intel → Guardian → MITRE → Guardian
-  → Risk → Guardian → Response → Guardian → Executive Report → Guardian
-  → Timeline Engine → Evaluation Engine
+Upload
+  ↓
+Evidence
+  ↓
+Threat Intelligence
+  ↓
+MITRE
+  ↓
+Risk
+  ↓
+Response
+  ↓
+Executive Report
+  ↓
+Guardian          ← validates after each specialist stage
+  ↓
+Timeline
+  ↓
+Evaluation
 ```
 
-- **Replay & explainability:** `GET /api/v1/investigations/{run_id}/replay`
-- **AI connectivity test:** `GET /api/v1/ai/test` (minimal token probe)
-- **Offline capable:** Deterministic fallbacks when `GOOGLE_API_KEY` is unset
+The Coordinator Agent runs first to validate incident context and produce an execution plan. Guardian validates outputs between specialist stages. If Guardian rejects an AI output, the workflow continues using the agent's fallback path.
 
-Sequence diagram: [`docs/architecture/investigation-sequence.md`](docs/architecture/investigation-sequence.md)
+**Replay:** `GET /api/v1/investigations/{run_id}/replay`
 
 ---
 
-## Technology stack
+## Technology Stack
 
 | Layer | Technology |
 |-------|------------|
-| Backend | Python 3.12, FastAPI, SQLAlchemy, Pydantic v2 |
-| Agents | Google ADK, `google-genai` (Gemini) |
-| MCP | Custom in-process registry (`mcp/`) |
-| Database | SQLite (MVP) |
-| Frontend | React 19, TypeScript, Tailwind CSS, Vite |
-| Infrastructure | Docker, Docker Compose |
-| Quality | pytest, Ruff, Black, TypeScript strict |
+| **Backend** | Python 3.12, FastAPI 0.138, SQLAlchemy, Pydantic v2, uvicorn |
+| **Frontend** | React 19, TypeScript, Tailwind CSS, Vite 6 |
+| **AI** | Google ADK, `google-genai` (Gemini 2.5 Pro) |
+| **Database** | SQLite (single-file, demo-ready) |
+| **Deployment** | Docker, Docker Compose |
+| **Quality** | pytest (176 tests), Ruff, Black, TypeScript strict mode |
 
 ---
 
-## Folder structure
+## Repository Structure
 
 ```text
 Kaggle/
-├── agents/                 # 8 specialist agent implementations
-│   ├── coordinator/        # Orchestration and execution plans
-│   ├── evidence/           # Log normalization
-│   ├── threat_intelligence/  # IOC extraction and enrichment
-│   ├── mitre/              # ATT&CK mapping
-│   ├── risk/               # Risk assessment
-│   ├── response/           # Response planning
-│   ├── executive_report/   # Executive summaries
-│   └── guardian/           # Safety validation
+├── agents/                     # 8 specialist agent implementations
+│   ├── coordinator/            # Orchestration and execution plans
+│   ├── evidence/               # Log normalization
+│   ├── threat_intelligence/    # IOC extraction and enrichment
+│   ├── mitre/                  # ATT&CK mapping
+│   ├── risk/                   # Risk assessment
+│   ├── response/               # Response planning
+│   ├── executive_report/       # Executive summaries
+│   └── guardian/               # Safety validation
 ├── backend/
-│   ├── app/                # FastAPI application
-│   │   ├── api/v1/         # REST endpoints
-│   │   ├── models/         # SQLAlchemy ORM (16 tables)
-│   │   ├── services/       # Business logic and workflow
-│   │   ├── repositories/   # Data access layer
-│   │   └── core/           # ADK, MCP, Guardian runtimes
-│   └── scripts/            # Demo seed scripts
-├── frontend/src/           # React dashboard (10 pages)
-├── mcp/                    # MCP registry and 5 tools
-├── evaluation/             # Benchmark and metrics engine
-├── tests/                  # Integration and API tests
+│   └── app/
+│       ├── api/v1/             # REST endpoints
+│       ├── models/             # SQLAlchemy ORM (16 tables)
+│       ├── services/           # Business logic and workflow
+│       ├── repositories/       # Data access layer
+│       └── core/               # ADK, MCP, Guardian runtimes
+├── frontend/src/               # React dashboard (10 pages)
+├── mcp/                        # MCP registry and 5 tools
+├── evaluation/                 # Benchmark and metrics engine
+├── tests/                      # Integration and API tests
 ├── docs/
-│   ├── architecture/       # Diagrams and Mermaid docs
-│   ├── demo/               # Screenshot gallery
-│   └── COMPETITION_ALIGNMENT.md
-├── scripts/                # reset_demo.py, dev.sh, asset generation
-├── docker/                 # Dockerfile.backend, Dockerfile.frontend
+│   ├── architecture/           # Diagrams and sequence docs
+│   ├── screenshots/            # UI screenshots
+│   └── submission/             # Kaggle submission package
+├── scripts/                    # dev.sh, reset_demo.py, asset generation
+├── docker/                     # Dockerfile.backend, Dockerfile.frontend
 ├── docker-compose.yml
 ├── CONTRIBUTING.md
 ├── ROADMAP.md
 └── README.md
 ```
+
+| Metric | Count |
+|--------|-------|
+| API paths | 35 |
+| API operations | 39 |
+| AI agents | 8 |
+| MCP tools | 5 |
+| Database tables | 16 |
+| Frontend pages | 10 |
+| Automated tests | 176 |
+
+Regenerate: `python scripts/generate_repo_stats.py`
 
 ---
 
@@ -209,46 +265,9 @@ Kaggle/
 - Docker and Docker Compose (recommended)
 - [uv](https://docs.astral.sh/uv/) (recommended for backend)
 
-### Quick start
+### Local
 
-```bash
-git clone https://github.com/Jugnu0707/Kaggle.git
-cd Kaggle
-cp .env.example .env
-docker compose up --build
-```
-
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:5173 |
-| Backend API | http://localhost:8000 |
-| Swagger docs | http://localhost:8000/docs |
-
----
-
-## Docker setup
-
-```bash
-docker compose up --build
-docker compose ps
-curl http://localhost:8000/api/v1/health
-curl http://localhost:8000/api/v1/ai/test
-```
-
-Services:
-
-| Service | Port | Image |
-|---------|------|-------|
-| `backend` | 8000 | `docker/Dockerfile.backend` |
-| `frontend` | 5173 | `docker/Dockerfile.frontend` |
-
-Volumes persist SQLite database and uploaded logs between restarts.
-
----
-
-## Local development
-
-**Backend** (with uv):
+**Backend:**
 
 ```bash
 cd backend
@@ -264,46 +283,103 @@ npm install
 npm run dev
 ```
 
-**Dev scripts** (from repo root):
+**Both services** (from repo root):
 
 ```bash
-./scripts/dev.sh              # Both services
-./scripts/dev-backend.sh      # Backend only
-./scripts/dev-frontend.sh     # Frontend only
+./scripts/dev.sh
 ```
 
-**Tests:**
+### Docker
 
 ```bash
-cd backend && uv run pytest
-cd frontend && npm run build
+cp .env.example .env
+docker compose up --build
 ```
+
+| Service | Port | URL |
+|---------|------|-----|
+| Backend | 8000 | http://localhost:8000 |
+| Frontend | 5173 | http://localhost:5173 |
+| Swagger | 8000 | http://localhost:8000/docs |
+
+Verify:
+
+```bash
+curl http://localhost:8000/api/v1/health
+curl http://localhost:8000/api/v1/ai/test   # requires GOOGLE_API_KEY for Gemini
+```
+
+### Environment Variables
+
+Copy `.env.example` to `.env`:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `DATABASE_URL` | SQLAlchemy database URL | `sqlite:///./oz_ai.db` |
+| `UPLOAD_DIR` | Log storage directory | `storage/uploads` |
+| `MAX_UPLOAD_SIZE_BYTES` | Maximum upload size | `52428800` (50 MB) |
+| `VITE_API_URL` | Frontend API base URL | `http://localhost:8000` |
+| `GOOGLE_API_KEY` | Gemini API key (optional) | *(empty)* |
+| `GOOGLE_MODEL` | Gemini model | `gemini-2.5-pro` |
+| `ADK_APP_NAME` | ADK application identifier | `oz_ai` |
+| `GUARDIAN_ENABLED` | Enable Guardian validation | `true` |
+| `MIN_AI_CONFIDENCE` | Minimum AI confidence threshold | `70` |
+| `MASK_SECRETS` | Mask detected secrets in outputs | `true` |
+| `MASK_PII` | Mask detected PII in outputs | `true` |
+
+Never commit `.env` files or API keys.
 
 ---
 
-## Demo mode
+## Quick Start
 
-One-click demo reset for judges and reviewers:
+Under five minutes with Docker:
+
+```bash
+git clone https://github.com/Jugnu0707/Kaggle.git
+cd Kaggle
+cp .env.example .env
+docker compose up --build
+```
+
+Open http://localhost:5173.
+
+Seed demo data (optional):
 
 ```bash
 python scripts/reset_demo.py
 ```
 
-This wipes the local database and uploads, seeds **10 incidents** with **25 logs** (PowerShell execution, brute force, ransomware, credential dumping, suspicious outbound connections, DNS tunneling, malware download, lateral movement, privilege escalation, data exfiltration), runs investigations on showcase incidents, and populates all agent output tabs.
+This creates 10 incidents with 25 logs and runs investigations on showcase cases. Works fully offline without `GOOGLE_API_KEY`.
 
-Without `GOOGLE_API_KEY`, agents use deterministic fallbacks — offline demos work fully; Gemini enriches AI-success paths when configured.
+---
 
-**Demo walkthrough:**
+## Demo
 
-1. Dashboard → incident counts and recent activity
-2. Incidents → **Suspicious PowerShell Execution**
-3. Review tabs: Timeline, Threat Intel, MITRE, Risk, Response, Executive Report, Guardian
-4. Investigation Runner → Run New Investigation
-5. Investigation Replay → step through agent stages
-6. Evaluation → agent health scores
-7. Settings → health, ADK, and MCP status
+```text
+Dashboard
+  ↓
+Run Investigation
+  ↓
+Executive Report
+  ↓
+Evaluation
+```
 
-Demo assets: [`docs/demo/`](docs/demo/)
+**Walkthrough:**
+
+1. **Dashboard** — Review incident counts and recent activity at http://localhost:5173
+2. **Run Investigation** — Incidents → *Suspicious PowerShell Execution* → **Investigate**, or use Investigation Runner
+3. **Executive Report** — Open the Executive Report tab on the incident detail page
+4. **Evaluation** — Navigate to `/evaluation` for per-agent health scores
+
+**Demo reset:**
+
+```bash
+python scripts/reset_demo.py
+```
+
+Demo assets and scripts: [`docs/demo/`](docs/demo/) · Judge checklist: [`docs/kaggle/final_checklist.md`](docs/kaggle/final_checklist.md)
 
 ---
 
@@ -316,107 +392,202 @@ Demo assets: [`docs/demo/`](docs/demo/)
 | Evidence | ![Evidence](docs/screenshots/evidence.png) |
 | Threat Intelligence | ![Threat Intelligence](docs/screenshots/threat-intelligence.png) |
 | MITRE Mapping | ![MITRE](docs/screenshots/mitre.png) |
-| Risk Assessment | ![Risk](docs/screenshots/risk-assessment.png) |
-| Response Plan | ![Response](docs/screenshots/response-plan.png) |
+| Risk Assessment | ![Risk Assessment](docs/screenshots/risk-assessment.png) |
+| Response Plan | ![Response Plan](docs/screenshots/response-plan.png) |
 | Executive Report | ![Executive Report](docs/screenshots/executive-report.png) |
 | Guardian Audit | ![Guardian](docs/screenshots/guardian.png) |
 | Timeline | ![Timeline](docs/screenshots/timeline.png) |
-| Evaluation Dashboard | ![Evaluation](docs/screenshots/evaluation-dashboard.png) |
 | Investigation Runner | ![Investigation Runner](docs/screenshots/investigation-runner.png) |
-
-Architecture: [`docs/architecture/architecture.png`](docs/architecture/architecture.png) · Diagrams: [`docs/diagrams/`](docs/diagrams/)
+| Evaluation Dashboard | ![Evaluation](docs/screenshots/evaluation-dashboard.png) |
 
 Regenerate: `cd backend && uv run python ../scripts/generate_assets.py`
 
 ---
 
+## AI Architecture
+
+Oz AI implements eight specialist agents. Each agent has a defined input schema, output schema, service layer, and persistence model.
+
+| Agent | Role | AI / Fallback | Output |
+|-------|------|---------------|--------|
+| **Coordinator** | Validate context and build execution plan | Rule-based | Orchestration plan |
+| **Evidence** | Collect, normalize, and summarize uploaded logs | Rule-based | Evidence package |
+| **Threat Intelligence** | Extract IOCs and enrich with reputation context | Gemini → offline reputation engine | IOC findings |
+| **MITRE Mapping** | Map evidence to ATT&CK techniques | Rule-based (`mappings.py`) | Technique list |
+| **Risk Assessment** | Score enterprise risk from investigation context | Gemini → rule scoring | Risk level and narrative |
+| **Response Planning** | Draft containment, eradication, and recovery steps | Gemini → scenario playbooks | Response plan |
+| **Executive Report** | Produce leadership-ready JSON and Markdown reports | Gemini → template engine | Executive report |
+| **Guardian** | Validate outputs for safety, schema, and compliance | Rule-based | Audit record |
+
+**Non-agent engines:**
+
+| Engine | Role |
+|--------|------|
+| Timeline Engine | Reconstruct chronological events from agent outputs |
+| Evaluation Engine | Score agent performance and persist metrics |
+
+Agent implementations: [`agents/`](agents/) · Detailed reference: [`docs/kaggle/ai_agents.md`](docs/kaggle/ai_agents.md)
+
+---
+
+## MCP
+
+Oz AI registers five operational MCP tools through an in-process registry at [`mcp/`](mcp/). Tools are introspectable via `GET /api/v1/system/mcp` and invokable through the MCP server runtime.
+
+| Tool | Description |
+|------|-------------|
+| `health` | Return application health status |
+| `list_incidents` | Return a paginated list of incidents |
+| `incident_details` | Return details for a single incident |
+| `list_logs` | Return uploaded log file metadata |
+| `system_info` | Return version, database, ADK status, and MCP status |
+
+Each tool defines typed input and output schemas via Pydantic models. Agents invoke backend services directly at runtime; MCP provides operational introspection and external tool access.
+
+Reference: [`docs/architecture/mcp-interaction.md`](docs/architecture/mcp-interaction.md)
+
+---
+
+## Google ADK
+
+The ADK runtime initializes at application startup in [`backend/app/core/adk_runtime.py`](backend/app/core/adk_runtime.py):
+
+1. Verify the `google-adk` package imports successfully
+2. Initialize the Coordinator Agent configuration
+3. Register all eight agents in the AI runtime registry
+4. Expose ADK status via health and system info endpoints
+
+AI-first agents (Threat Intelligence, Risk, Response, Executive Report) call Gemini through `google-genai` when `GOOGLE_API_KEY` is set. When the key is missing, quota is exceeded, or the response is invalid, each agent falls back to its deterministic rule engine without blocking the workflow.
+
+Configuration: `GOOGLE_API_KEY`, `GOOGLE_MODEL`, `ADK_APP_NAME`, `ADK_ENABLE_TRACING`
+
+---
+
+## Security
+
+### Guardian
+
+The Guardian Agent validates every specialist output between workflow stages:
+
+- Prompt injection scanning
+- PII detection and masking (`MASK_PII`)
+- Secret detection and masking (`MASK_SECRETS`)
+- JSON schema validation per agent
+- Mandatory field completeness checks
+- Confidence threshold enforcement (`MIN_AI_CONFIDENCE`)
+
+Validation results are persisted to `guardian_audits` with status `approved`, `warning`, or `rejected`.
+
+### Fallback
+
+When Guardian rejects an AI output or Gemini is unavailable, agents use deterministic fallback paths:
+
+| Agent | Fallback |
+|-------|----------|
+| Threat Intelligence | Offline reputation rules |
+| Risk Assessment | Severity and technique-based scoring |
+| Response Planning | Scenario playbooks |
+| Executive Report | Template engine |
+
+The workflow never blocks on AI failure.
+
+### Validation
+
+- Guardian can be disabled via `GUARDIAN_ENABLED=false` (not recommended for production)
+- All validation events are append-only audit records
+- Response plans are recommendations only — Oz AI does not execute remediation
+
+Implementation: [`agents/guardian/`](agents/guardian/) · [`backend/app/services/orchestration_guardian.py`](backend/app/services/orchestration_guardian.py)
+
+---
+
 ## Evaluation
 
-Oz AI includes a structured evaluation framework:
+Oz AI includes an offline evaluation framework that scores agent quality after each investigation.
 
 | Component | Location |
 |-----------|----------|
 | Evaluation engine | `evaluation/engine.py` |
 | Benchmark runner | `evaluation/benchmark.py` |
+| Health scorer | `evaluation/scorer.py` |
 | Metrics API | `GET /api/v1/evaluation` |
 | Dashboard UI | `/evaluation` |
 
-Offline benchmarks produce precision/recall metrics per agent. Results persist to the `evaluation_metrics` table and surface in the Evaluation dashboard.
+**Health score components** (weighted):
 
----
+| Component | Weight | Measures |
+|-----------|--------|----------|
+| Availability | 30% | Success rate without hard failures |
+| Reliability | 30% | Consistent success and low retry pressure |
+| Performance | 20% | Mean execution time vs. 5 s target |
+| Accuracy | 20% | Benchmark confidence or success rate |
 
-## Environment variables
+Results persist to the `evaluation_metrics` table. Investigation replay records `ai_used` and `fallback_used` per step for transparency.
 
-Copy `.env.example` to `.env`:
+**Run tests:**
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `DATABASE_URL` | SQLAlchemy database URL | `sqlite:///./oz_ai.db` |
-| `UPLOAD_DIR` | Log storage directory | `storage/uploads` |
-| `VITE_API_URL` | Frontend API base URL | `http://localhost:8000` |
-| `GOOGLE_API_KEY` | Gemini API key (optional) | *(empty)* |
-| `GOOGLE_MODEL` | Gemini model | `gemini-2.5-pro` |
-| `GUARDIAN_ENABLED` | Enable Guardian validation | `true` |
-| `MIN_AI_CONFIDENCE` | Minimum AI confidence threshold | `70` |
+```bash
+cd backend && uv run pytest
+```
 
-Never commit `.env` files or API keys.
-
----
-
-## Competition alignment
-
-**Competition:** Kaggle AI Agents Intensive Capstone · **Track:** Agents for Business
-
-| Dimension | Implementation | Location |
-|-----------|----------------|----------|
-| Google ADK | Runtime, agent registry, Gemini integration | `agents/`, `backend/app/core/adk_runtime.py` |
-| MCP | 5 operational tools, registry, API introspection | `mcp/`, `GET /api/v1/system/mcp` |
-| Multi-agent | 8 agents + Coordinator orchestration | `agents/`, `POST /investigations/run` |
-| Security | Guardian: injection, PII, schema, confidence | `agents/guardian/` |
-| Business impact | Enterprise incident response / MTTR | `docs/01_PROJECT_BRIEF.md` |
-| Evaluation | Offline benchmarks + API dashboard | `evaluation/`, `/evaluation` |
-| Deployability | Docker Compose + demo reset | `docker-compose.yml`, `scripts/reset_demo.py` |
-| Human-in-the-loop | Documented; API enforcement Sprint 4 | `docs/02_ARCHITECTURE.md` |
-
-Full mapping: [`docs/COMPETITION_ALIGNMENT.md`](docs/COMPETITION_ALIGNMENT.md)
+Reference: [`docs/kaggle/evaluation.md`](docs/kaggle/evaluation.md)
 
 ---
 
 ## Roadmap
 
-| Sprint | Status | Focus |
-|--------|--------|-------|
-| Sprint 1 — Foundation | Complete | Backend, frontend, Docker, CRUD |
-| Sprint 2 — ADK & MCP | Complete | ADK runtime, MCP, Coordinator, Evidence |
-| Sprint 3 — Agents | Complete | 6 agents, Guardian, Timeline, Evaluation, Workflow |
-| Sprint 3.5 — Competition prep | Complete | Hardening, demo assets, doc sync |
-| Sprint 4 — Release hardening | In progress | Auth, approval, datasets, submission |
+### Current (v0.1.0)
 
-See [`ROADMAP.md`](ROADMAP.md) for v0.2.0+ plans.
+- [x] FastAPI backend with 35 API paths
+- [x] React dashboard with 10 pages
+- [x] Eight Google ADK specialist agents
+- [x] Guardian validation pipeline
+- [x] MCP registry with 5 operational tools
+- [x] Investigation workflow with replay
+- [x] Timeline and Evaluation engines
+- [x] Docker Compose deployment
+- [x] Offline demo mode (`scripts/reset_demo.py`)
+
+### Future
+
+| Release | Focus |
+|---------|-------|
+| v0.2.0 | API authentication, RBAC, PostgreSQL, rate limiting |
+| v0.3.0 | SIEM webhooks, SSO, multi-tenant isolation |
+| v1.0.0 | Human approval gates, production MCP domain tools, CI regression gates |
+
+Full roadmap: [`ROADMAP.md`](ROADMAP.md)
 
 ---
 
-## Documentation
+## Known Limitations
 
-| Document | Description |
-|----------|-------------|
-| [`docs/01_PROJECT_BRIEF.md`](docs/01_PROJECT_BRIEF.md) | Vision, goals, competition context |
-| [`docs/02_ARCHITECTURE.md`](docs/02_ARCHITECTURE.md) | Authoritative architecture reference |
-| [`docs/architecture/`](docs/architecture/) | Diagrams and sequence documentation |
-| [`docs/COMPETITION_ALIGNMENT.md`](docs/COMPETITION_ALIGNMENT.md) | Kaggle requirement mapping |
-| [`docs/07_SUBMISSION_CHECKLIST.md`](docs/07_SUBMISSION_CHECKLIST.md) | Pre-submission checklist |
-| [`docs/kaggle/final_checklist.md`](docs/kaggle/final_checklist.md) | Pre-submission verification |
-| [`docs/submission/`](docs/submission/) | Kaggle submission package |
-| [`docs/FINAL_READINESS_REPORT.md`](docs/FINAL_READINESS_REPORT.md) | Sprint 4 final readiness (Task 5) |
-| [`docs/COMPETITION_SCORECARD.md`](docs/COMPETITION_SCORECARD.md) | Competition assessment (84/100) |
-| [`docs/diagrams/`](docs/diagrams/) | GitHub-renderable Mermaid diagrams |
-| [`CHANGELOG.md`](CHANGELOG.md) | Release history |
+Oz AI is an MVP built for demonstration, evaluation, and capstone submission. Current constraints:
+
+| Area | Limitation |
+|------|------------|
+| **Database** | SQLite — suitable for demos, not concurrent production workloads |
+| **Authentication** | No API auth or RBAC; all endpoints are open |
+| **Remediation** | Response plans are recommendations only; no automated execution |
+| **Integrations** | No SIEM, webhook, or live threat feed connectors |
+| **Threat intel** | Offline reputation rules; no VirusTotal or commercial feeds |
+| **MITRE** | Local rule mappings; no auto-sync with MITRE ATT&CK API |
+| **MCP** | Operational tools only; agents call services directly, not MCP at runtime |
+| **Deployment** | Docker runs Vite dev server; no production Nginx build |
+| **Scaling** | Single-process, in-memory agent execution; no worker queue |
+| **Approval** | Human-in-the-loop gates are documented but not enforced in API or UI |
+
+Full list: [`docs/kaggle/limitations.md`](docs/kaggle/limitations.md)
 
 ---
 
 ## Contributing
 
-We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md), [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md), and [SECURITY.md](SECURITY.md).
+Contributions are welcome. See:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md) — setup, conventions, and pull request process
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [SECURITY.md](SECURITY.md)
 
 ---
 
@@ -428,8 +599,7 @@ MIT License — see [LICENSE](LICENSE).
 
 ## Acknowledgements
 
-- [Kaggle](https://www.kaggle.com/) — AI Agents Intensive Capstone
-- [Google Agent Development Kit (ADK)](https://google.github.io/adk-docs/) — Agent orchestration framework
-- [Google Gemini](https://ai.google.dev/) — LLM inference
-- [MITRE ATT&CK](https://attack.mitre.org/) — Threat framework reference
-- [FastAPI](https://fastapi.tiangolo.com/) · [React](https://react.dev/) · [Tailwind CSS](https://tailwindcss.com/)
+- **[Google](https://ai.google.dev/)** — Agent Development Kit (ADK) and Gemini
+- **[Kaggle](https://www.kaggle.com/)** — AI Agents Intensive Capstone (Agents for Business track)
+- **[MITRE ATT&CK](https://attack.mitre.org/)** — Threat framework reference
+- **Open Source** — [FastAPI](https://fastapi.tiangolo.com/), [React](https://react.dev/), [Tailwind CSS](https://tailwindcss.com/), [Vite](https://vite.dev/), [uv](https://docs.astral.sh/uv/)
